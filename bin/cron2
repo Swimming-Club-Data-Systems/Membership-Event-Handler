@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+/**
+ * Handles cron
+ */
+
+let mysql = require('./common/mysql');
+mysql.createConnection();
+
+require('../cron/cron');

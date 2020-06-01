@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+/**
+ * Handles cron
+ */
+
+require('../cron/cron-legacy');

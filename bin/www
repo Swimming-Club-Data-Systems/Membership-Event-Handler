@@ -4,6 +4,11 @@
  * Module dependencies.
  */
 
+// Load env vars
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 var app = require('../app');
 var debug = require('debug')('membership-event-service:server');
 var http = require('http');
