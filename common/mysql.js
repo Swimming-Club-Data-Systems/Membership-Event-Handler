@@ -4,15 +4,15 @@
  * A pool is used for concurrency
  */
 
-var mysql = require('mysql');
+var mysql = require('mysql2/promise');
 var pool;
 
-function createPool() {
+async function createPool() {
   if (pool) {
     return pool;
   }
 
-  pool = mysql.createPool({
+  pool = await mysql.createPool({
     connectionLimit : 25,
     host            : process.env.DB_HOST || 'localhost',
     user            : process.env.DB_USER,
@@ -31,5 +31,6 @@ function getPool() {
 
 module.exports = {
   createPool,
-  getPool
+  getPool,
+  query,
 }
