@@ -25,8 +25,14 @@ function getPool() {
   if (pool) {
     return pool;
   } else {
+    console.trace("Here I am!")
     throw 'No connection pool';
   }
+}
+
+function query(query, args = []) {
+  let pool = getPool();
+  return pool.query(query, args);
 }
 
 module.exports = {

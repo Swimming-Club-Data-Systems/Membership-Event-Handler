@@ -21,7 +21,7 @@ async function updatePaymentStatus(client, paymentObject) {
 }
 
 async function paymentExists(client, payment) {
-  return new Promise(resolve, reject => {
+  return new Promise(async (resolve, reject) => {
     let [row, fields] = await mysql.query("SELECT COUNT(*) FROM payments WHERE PMkey = ?", [payment]);
     if (row && row[0]['COUNT(*)'] > 0) {
       resolve(true);

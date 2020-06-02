@@ -11,7 +11,7 @@ var gocardlessRouter = require('./routes/gocardless');
 
 const pool = require('./common/mysql');
 pool.createPool();
-pool.getPool();
+// pool.getPool();
 
 var app = express();
 
