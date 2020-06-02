@@ -43,39 +43,44 @@ exports.webhookHandler = async function (req, res, next) {
       events.map(async event => {
         // Record event as handled OR check not done before!
         try {
-          let pool = mysql.getPool();
+          if (event.id) {
+            let pool = mysql.getPool();
 
-          let [rows, fields] = await pool.execute("SELECT COUNT(*) FROM paymentWebhookOps WHERE EventID = ?", [event.id])
+            let [rows, fields] = await pool.execute("SELECT COUNT(*) FROM paymentWebhookOps WHERE EventID = ?", [event.id])
 
-          if (rows[0]['COUNT(*)'] == 0) {
-            // Record event in db
-            await pool.query("INSERT INTO paymentWebhookOps (EventID) VALUES (?)", [event.id]);
+            if (rows[0]['COUNT(*)'] == 0) {
+              // Record event in db
+              await pool.query("INSERT INTO paymentWebhookOps (EventID) VALUES (?)", [event.id]);
 
-            // Handle the events
-            switch (event.resource_type) {
-              case 'payments':
-                await payments.handleEvent(event);
-                break;
-              case 'mandates':
-                await mandates.handleEvent(event);
-                break;
-              case 'payouts':
-                await payouts.handleEvent(event);
-                break;
-              case 'refunds':
-                await refunds.handleEvent(event);
-                break;
-              case 'subscriptions':
-                await subscriptions.handleEvent(event);
-                break;
-              case 'instalment_schedules':
-                await installmentSchedules.handleEvent(event);
-                break;
-              case 'creditors':
-                await creditors.handleEvent(event);
-                break;
-            }
-          };
+              // Handle the events
+              switch (event.resource_type) {
+                case 'payments':
+                  await payments.handleEvent(event);
+                  break;
+                case 'mandates':
+                  await mandates.handleEvent(event);
+                  break;
+                case 'payouts':
+                  await payouts.handleEvent(event);
+                  break;
+                case 'refunds':
+                  await refunds.handleEvent(event);
+                  break;
+                case 'subscriptions':
+                  await subscriptions.handleEvent(event);
+                  break;
+                case 'instalment_schedules':
+                  await installmentSchedules.handleEvent(event);
+                  break;
+                case 'creditors':
+                  await creditors.handleEvent(event);
+                  break;
+              }
+            };
+          } else if (event.action == 'disconnected') {
+            // Special webhook for OAuth2 organisation disconnect
+            let organisation = event.links.organisation;
+          }
         } catch (err) {
 
         }

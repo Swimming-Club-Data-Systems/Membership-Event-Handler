@@ -112,6 +112,13 @@ async function expired(client, event) {
   }
 }
 
+async function replaced(client, event) {
+  /*
+   * THIS EVENT MUST BE HANDLED
+   * WHEN USERS UPGRADE TO PLUS, MANDATES ARE REPLACED
+   */
+}
+
 exports.handleEvent = async function (event) {
   try {
     let client = await orgMethods.getOrganisationClient(event.links.organisation);
@@ -128,6 +135,9 @@ exports.handleEvent = async function (event) {
         break;
       case 'expired':
         this.expired(client, event)
+        break;
+      case 'replaced':
+        this.replaced(client, event)
         break;
     
       default:
