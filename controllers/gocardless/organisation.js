@@ -19,7 +19,8 @@ exports.getOrganisation = async function (org) {
         tenant: results[0].ID,
         name: results[0].Name,
         email: results[0].Email,
-        accessToken: results[0].AccessToken
+        accessToken: results[0].AccessToken,
+        sendingEmail: 'noreply@myswimmingclub.uk'
       });
     } catch (err) {
       reject(error);
@@ -27,11 +28,28 @@ exports.getOrganisation = async function (org) {
   });
 }
 
+exports.getClient = async function (accessToken) {
+  return new Promise(async (resolve, reject) => {
+    let environment = constants.Environments.Live;
+    if (process.env.NODE_ENV !== 'production') {
+      environment = constants.Environments.Sandbox;
+    }
+
+    client = gocardless(
+      accessToken,
+      environment,
+    );
+
+    resolve(client);
+  }).catch(err => {
+    console.warn(err);
+    reject(err);
+  });
+}
+
 exports.getOrganisationClient = async function (org) {
   return new Promise(async (resolve, reject) => {
     this.getOrganisation(org).then(orgDetails => {
-      console.log(orgDetails);
-
       let environment = constants.Environments.Live;
       if (process.env.NODE_ENV !== 'production') {
         environment = constants.Environments.Sandbox;
