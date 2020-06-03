@@ -66,8 +66,8 @@ async function created(client, event) {
       let paymentId = res.insertId;
 
       // Check if we need to add an item to payments pending for tracking
-      let [res, fields] = await mysql.query("SELECT COUNT(*) FROM paymentsPending WHERE Payment = ?", [paymentId]);
-      if (res[0]['COUNT(*)'] == 0) {
+      let [result, fields] = await mysql.query("SELECT COUNT(*) FROM paymentsPending WHERE Payment = ?", [paymentId]);
+      if (result[0]['COUNT(*)'] == 0) {
         await mysql.query("INSERT INTO paymentsPending (`Date`, `Status`, `UserID`, `Name`, `Amount`, `Currency`, `PMkey`, `Type`, `Payment`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [
           date,
           'Pending',
