@@ -4,8 +4,10 @@
 
 const orgMethods = require('./organisation');
 const mysql = require('../../common/mysql');
+const escape = require('escape-html');
+const Email = require('../email/email');
 
-async function created(client, event) {
+async function created(org, client, event) {
   // Check if exists
   // let pool = mysql.getPool();
   // pool.query("SELECT COUNT(*) FROM paymentMandates WHERE Mandate = ?", [event.links.mandate], (err, results, fields) => {
@@ -16,21 +18,65 @@ async function created(client, event) {
   // });
 }
 
-async function cancelled(client, event) {
-  var mandates, prefCount, fields, prefMandate;
+async function setDefaultMandate(userId, mandateId) {
+  var rows, fields;
+  [rows, fields] = await mysql.query("SELECT COUNT(*) FROM paymentPreferredMandate WHERE UserID = ?", [userId]);
+
+  if (rows[0]['COUNT(*)'] == 0) {
+    // Add pref mandate
+    await mysql.query("INSERT INTO paymentPreferredMandate (UserID, MandateID) VALUES (?, ?)", [
+      userId,
+      mandateId
+    ]);
+  } else {
+    // Modify pref mandate
+    await mysql.query("UPDATE paymentPreferredMandate SET MandateID = ? WHERE UserID = ?", [
+      mandateId,
+      userId
+    ]);
+  }
+}
+
+async function resubmissionRequested(org, client, event) {
+  var rows, fields;
+
+  // Check if is in db, if so set enabled
+  var mandate = await client.mandates.find(event.links.mandate);
+
+  await mysql.query("UPDATE `paymentMandates` SET `InUse` = ? WHERE `Mandate` = ?", [1, mandate.id]);
+
+  // Get User
+  [rows, fields] = await mysql.query("SELECT users.UserID, `Forename`, `Surname`, `EmailAddress`, `MandateID`, users.Active FROM `paymentMandates` INNER JOIN `users` ON users.UserID = paymentMandates.UserID WHERE `Mandate` = ?", [mandate.id]);
+
+  if (rows[0]) {
+    var userId = rows[0].UserID;
+    var mandateId = rows[0].MandateID;
+
+    // Get count of mandates
+    [rows, fields] = await mysql.query("SELECT COUNT(*) FROM `paymentMandates` INNER JOIN `users` ON users.UserID = paymentMandates.UserID WHERE users.UserID = ? AND paymentMandates.InUse", [rows[0].UserID]);
+    if (rows[0]['COUNT(*)'] == 1) {
+      // Set new default mandate
+      setDefaultMandate(userId, mandateId);
+    }
+  }
+}
+
+async function cancelled(org, client, event) {
+  var mandates, prefCount, rows, fields, prefMandate, oldMandate, newMandate;
+  console.log('CANCELLED')
   try {
     // Disable in system
     await mysql.query("UPDATE `paymentMandates` SET `InUse` = ? WHERE `Mandate` = ?", [0, event.links.mandate]);
 
     // Get User
-    let [rows, fields] = await mysql.query("SELECT users.UserID, `Forename`, `Surname`, `EmailAddress`, `MandateID`, users.Active FROM `paymentMandates` INNER JOIN `users` ON users.UserID = paymentMandates.UserID WHERE `Mandate` = ?", [event.links.mandate]);
+    [rows, fields] = await mysql.query("SELECT users.UserID, `Forename`, `Surname`, `EmailAddress`, `MandateID`, users.Active FROM `paymentMandates` INNER JOIN `users` ON users.UserID = paymentMandates.UserID WHERE `Mandate` = ?", [event.links.mandate]);
 
     if (rows[0]) {
       // User exists
       let mandateId = rows[0].MandateID;
 
       // Remove mandate preference
-      await mysql.query("DELETE FROM `paymentPreferredMandate` WHERE `MandateID` = ?", [MandateID]);
+      await mysql.query("DELETE FROM `paymentPreferredMandate` WHERE `MandateID` = ?", [mandateId]);
 
       // Get any other active mandates
       [mandates, fields] = await mysql.query("SELECT MandateID FROM paymentMandates WHERE UserID = ? AND InUse = 1", [rows[0].UserID]);
@@ -42,21 +88,39 @@ async function cancelled(client, event) {
       }
 
       // Get info about current pref and old pref
-      [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates INNER JOIN paymentPreferredMandate ON paymentPreferredMandate.MandateID = paymentMandates.MandateID WHERE paymentPreferredMandate.UserID = ?", [rows[0].UserID]);
-      [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates WHERE MandateID = ?", [mandateId]);
+      [oldMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates INNER JOIN paymentPreferredMandate ON paymentPreferredMandate.MandateID = paymentMandates.MandateID WHERE paymentPreferredMandate.UserID = ?", [rows[0].UserID]);
+      [newMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates WHERE MandateID = ?", [mandateId]);
 
       // If user is active
       if (rows[0].Active) {
         // Send an email to the user
-        // Need to write handlers for sendgrid in js
+        let name = rows[0].Forename + ' ' + rows[0].Surname;
+        let subject = 'Direct debit mandate cancelled';
+        let content = '<p>Hello ' + escape(name) + ',</p>';
+        content += '<p>Your Direct Debit mandate for ' + escape(org.name) + ' has been cancelled.</p>';
+
+        if (oldMandate[0]) {
+          content += '<p>The cancelled mandate was on ' + escape(oldMandate[0].AccountHolderName) + '\'s account with ' + escape(oldMandate[0].BankName) + '. Account number ending in &middot;&middot;&middot;&middot;&middot;&middot;'.escape(oldMandate[0].AccountNumEnd) + '. Our internal reference for the mandate was ' + escape(oldMandate[0].Mandate) + '.</p>';
+        }
+
+        if (newMandate[0]) {
+          content += '<p>Your current direct debit mandate is set to ' + escape(newMandate[0].AccountHolderName) + '\'s account with ' + escape(newMandate[0].BankName) + '. Account number ending in &middot;&middot;&middot;&middot;&middot;&middot;'.escape(newMandate[0].AccountNumEnd) + '. Our internal reference for the mandate is ' + escape(oldMandate[0].Mandate) + '.</p>';
+        }
+
+        content += '<p>Sign in to your club account to make any changes to your account and direct debit options.</p>';
+
+        content += '<p>Kind regards,<br>The ' + escape(org.name) + ' team</p>';
+
+        let mail = new Email(name, rows[0].EmailAddress, org, subject, content);
+        mail.send();
       }
     }
   } catch (err) {
-
+    console.warn(err);
   }
 }
 
-async function transferred(client, event) {
+async function transferred(org, client, event) {
   try {
     let mandate = await client.mandates.find(event.links.mandate);
     let bankAccount = await client.customerBankAccounts.find(mandate.links.customer_bank_account);
@@ -79,11 +143,11 @@ async function transferred(client, event) {
   }
 }
 
-async function expired(client, event) {
+async function expired(org, client, event) {
   await mysql.query("UPDATE `paymentMandates` SET `InUse` = ? WHERE `Mandate` = ?", [false, event.links.mandate]);
 
   var fields, mandates, prefCount, prefMandate, rows;
-  
+
   // Get the user ID, set to another bank if possible and let them know.
   [rows, fields] = await mysql.query("SELECT users.UserID, `Forename`, `Surname`, `EmailAddress`, `MandateID`, users.Active FROM `paymentMandates` INNER JOIN `users` ON users.UserID = paymentMandates.UserID WHERE `Mandate` = ?", [event.links.mandate]);
 
@@ -115,7 +179,7 @@ async function expired(client, event) {
   }
 }
 
-async function replaced(client, event) {
+async function replaced(org, client, event) {
   /*
    * THIS EVENT MUST BE HANDLED
    * WHEN USERS UPGRADE TO PLUS, MANDATES ARE REPLACED
@@ -124,30 +188,34 @@ async function replaced(client, event) {
 
 exports.handleEvent = async function (event) {
   try {
-    let client = await orgMethods.getOrganisationClient(event.links.organisation);
-    
+    let org = await orgMethods.getOrganisation(event.links.organisation);
+    let client = await orgMethods.getClient(org.accessToken);
+
     switch (event.action) {
       case 'created':
-        created(client, event)
+        created(org, client, event)
         break;
       case 'cancelled':
-        cancelled(client, event)
+        cancelled(org, client, event)
         break;
       case 'transferred':
-        transferred(client, event)
+        transferred(org, client, event)
         break;
       case 'expired':
-        expired(client, event)
+        expired(org, client, event)
         break;
       case 'replaced':
-        replaced(client, event)
+        replaced(org, client, event)
         break;
-    
+      case 'resubmission_requested':
+        resubmissionRequested(org, client, event)
+        break;
+
       default:
         // Can not handle event
         break;
     }
-    
+
   } catch (error) {
     console.warn(error);
   }

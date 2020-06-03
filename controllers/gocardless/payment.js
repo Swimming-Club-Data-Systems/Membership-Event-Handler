@@ -38,15 +38,12 @@ async function paymentExists(client, payment) {
 
 async function created(org, client, event) {
   // Check if payment already exists
-  console.log('PAYMENT CREATED HANDLER');
   let exists = await paymentExists(client, event.links.payment);
 
   if (!exists) {
     var result, fields;
     let payment = await client.payments.find(event.links.payment);
-
-    console.log(payment);
-
+    
     if (event.links.payout) {
       // Create or update payout
       // TODO;
@@ -202,7 +199,7 @@ async function failed(org, client, event) {
       content += '<p>Your Direct Debit payment (' + escape(user.Name) + ') of £' + user.Amount + ', has failed.</p>';
 
       if (numRetries < 3) {
-        content += '<p>We will automatically retry this payment in around ten days time. These precise date will vary by bank and working days.</p>';
+        content += '<p>We will automatically retry this payment in around ten days time. The precise date will vary by bank and working days.</p>';
 
         if (numRetries < 2) {
           content += '<p>You don\'t need to take any action. Should this payment fail, we will retry the payment up to ' + (2 - numRetries) + ' times.</p>';
