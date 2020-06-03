@@ -15,9 +15,13 @@ async function updatePaymentStatus(org, client, paymentObject) {
     payouts.createOrUpdate(org, client, paymentObject.links.payout);
   }
 
+  let payout = null;
+  if (paymentObject.links.payout) {
+    payout = paymentObject.links.payout;
+  }
   await mysql.query("UPDATE `payments` SET `Status` = ?, `Payout` = ? WHERE `PMkey` = ?", [
     paymentObject.status,
-    paymentObject.payout,
+    paymentObject.links.payout,
     paymentObject.id
   ]);
 }
