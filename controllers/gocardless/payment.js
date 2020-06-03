@@ -32,9 +32,10 @@ async function paymentExists(client, payment) {
 
 async function created(client, event) {
   // Check if payment already exists
-  let paymentExists = await paymentExists(client, event.links.payment);
+  console.log('PAYMENT CREATED HANDLER');
+  let exists = await paymentExists(client, event.links.payment);
 
-  if (!paymentExists) {
+  if (!exists) {
     let payment = await client.payments.find(event.links.payment);
 
     if (event.links.payout) {
@@ -64,7 +65,7 @@ async function created(client, event) {
       ]);
 
       // Get db id of payment
-      let paymentId = res.insertId;
+      let paymentId = result.insertId;
 
       // Check if we need to add an item to payments pending for tracking
       [result, fields] = await mysql.query("SELECT COUNT(*) FROM paymentsPending WHERE Payment = ?", [paymentId]);
@@ -87,13 +88,13 @@ async function created(client, event) {
 
 async function customerApprovalGranted(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 async function customerApprovalDenied(client, event) {
   let payment = client.payments.find(event.links.payment);
 
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 
   let [userRow, fields] = await mysql.query("SELECT payments.UserID, Name, Amount, Forename, Surname FROM payments INNER JOIN users ON payments.UserID = users.UserID WHERE PMkey = ?", [
     payment.id
@@ -104,22 +105,22 @@ async function customerApprovalDenied(client, event) {
 
 async function submitted(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 async function confirmed(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 async function chargebackCancelled(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 async function paidOut(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 
   await mysql.query("UPDATE `paymentsPending` SET `Status` = ? WHERE `PMkey` = ?", [
     'Paid',
@@ -129,18 +130,18 @@ async function paidOut(client, event) {
 
 async function lateFailureSettled(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 async function chargebackSettled(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 async function failed(client, event) {
   let payment = client.payments.find(event.links.payment);
 
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 
   let [userRow, fields] = await mysql.query("SELECT payments.UserID, Name, Amount, Forename, Surname FROM payments INNER JOIN users ON payments.UserID = users.UserID WHERE PMkey = ?", [
     payment.id
@@ -182,7 +183,7 @@ async function failed(client, event) {
 
 async function chargedBack(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 
   let [userRow, fields] = await mysql.query("SELECT payments.UserID, Name, Amount, Forename, Surname FROM payments INNER JOIN users ON payments.UserID = users.UserID WHERE PMkey = ?", [
     payment.id
@@ -193,57 +194,62 @@ async function chargedBack(client, event) {
 
 async function cancelled(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 async function resubmissionRequested(client, event) {
   let payment = client.payments.find(event.links.payment);
-  this.updatePaymentStatus(client, payment);
+  updatePaymentStatus(client, payment);
 }
 
 exports.handleEvent = async function (event) {
+  console.log('PAYMENT HANDLER GOT EVENT');
   try {
     let client = await orgMethods.getOrganisationClient(event.links.organisation);
+
+    console.log(client);
+    console.log(event.action);
     
     switch (event.action) {
       case 'created':
-        this.created(client, event)
+        console.log('SENDING TO PAYMENT CREATED HANDLER');
+        created(client, event)
         break;
       case 'customer_approval_granted':
-        this.customerApprovalGranted(client, event)
+        customerApprovalGranted(client, event)
         break;
       case 'customer_approval_denied':
-        this.customerApprovalDenied(client, event)
+        customerApprovalDenied(client, event)
         break;
       case 'submitted':
-        this.submitted(client, event)
+        submitted(client, event)
         break;
       case 'confirmed':
-        this.confirmed(client, event)
+        confirmed(client, event)
         break;
       case 'chargeback_cancelled':
-        this.chargebackCancelled(client, event)
+        chargebackCancelled(client, event)
         break;
       case 'paid_out':
-        this.paidOut(client, event)
+        paidOut(client, event)
         break;
       case 'late_failure_settled':
-        this.lateFailureSettled(client, event)
+        lateFailureSettled(client, event)
         break;
       case 'chargeback_settled':
-        this.chargebackSettled(client, event)
+        chargebackSettled(client, event)
         break;
       case 'failed':
-        this.failed(client, event)
+        failed(client, event)
         break;
       case 'charged_back':
-        this.chargedBack(client, event)
+        chargedBack(client, event)
         break;
       case 'cancelled':
-        this.cancelled(client, event)
+        cancelled(client, event)
         break;
       case 'resubmission_requested':
-        this.resubmissionRequested(client, event)
+        resubmissionRequested(client, event)
         break;
     
       default:

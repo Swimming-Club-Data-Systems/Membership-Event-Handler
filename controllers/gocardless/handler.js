@@ -39,8 +39,10 @@ exports.webhookHandler = async function (req, res, next) {
   var events = parseEvents(req.body, req.get('Webhook-Signature'));
 
   if (events) {
+    console.log('GOT EVENTS');
     let eventHandle = await Promise.all(
       events.map(async event => {
+        console.log(event);
         // Record event as handled OR check not done before!
         try {
           if (event.id) {
@@ -55,6 +57,7 @@ exports.webhookHandler = async function (req, res, next) {
               // Handle the events
               switch (event.resource_type) {
                 case 'payments':
+                  console.log('SENDING TO PAY HANDLER');
                   await payments.handleEvent(event);
                   break;
                 case 'mandates':

@@ -128,19 +128,19 @@ exports.handleEvent = async function (event) {
     
     switch (event.action) {
       case 'created':
-        this.created(client, event)
+        created(client, event)
         break;
       case 'cancelled':
-        this.cancelled(client, event)
+        cancelled(client, event)
         break;
       case 'transferred':
-        this.transferred(client, event)
+        transferred(client, event)
         break;
       case 'expired':
-        this.expired(client, event)
+        expired(client, event)
         break;
       case 'replaced':
-        this.replaced(client, event)
+        replaced(client, event)
         break;
     
       default:

@@ -8,12 +8,9 @@ const mysql = require('../../common/mysql');
 
 exports.getOrganisation = async function (org) {
   return new Promise(async (resolve, reject) => {
-    let pool = mysql.getPool();
-    let sql = "SELECT `AccessToken`, tenants.ID, tenants.Name, tenants.Email FROM `gcCredentials` INNER JOIN tenants ON gcCredentials.Tenant = tenants.id WHERE OrganisationID = ?";
-    let data = [org];
-    await pool.query(sql, data, (error, results, fields) => {
-      // Stop execution if error
-      if (error) reject(error);
+    var results, fields;
+    try {
+      [results, fields] = await mysql.query("SELECT `AccessToken`, tenants.ID, tenants.Name, tenants.Email FROM `gcCredentials` INNER JOIN tenants ON gcCredentials.Tenant = tenants.id WHERE OrganisationID = ?", [org]);
 
       if (results.length == 0) reject({ message: 'No results' });
 
@@ -24,14 +21,16 @@ exports.getOrganisation = async function (org) {
         email: results[0].Email,
         accessToken: results[0].AccessToken
       });
-    });
+    } catch (err) {
+      reject(error);
+    }
   });
 }
 
 exports.getOrganisationClient = async function (org) {
   return new Promise(async (resolve, reject) => {
     this.getOrganisation(org).then(orgDetails => {
-      console.log(org);
+      console.log(orgDetails);
 
       let environment = constants.Environments.Live;
       if (process.env.NODE_ENV !== 'production') {
@@ -39,12 +38,13 @@ exports.getOrganisationClient = async function (org) {
       }
 
       client = gocardless(
-        org.accessToken,
+        orgDetails.accessToken,
         environment,
       );
 
       resolve(client);
     }).catch(err => {
+      console.warn(err);
       reject(err);
     });
   });
