@@ -3,16 +3,16 @@
  */
 
 const orgMethods = require('./organisation');
+const payouts = require('./payout');
 const mysql = require('../../common/mysql');
 const moment = require('moment-timezone');
 const escape = require('escape-html');
 const Email = require('../email/email');
 
-async function updatePaymentStatus(client, paymentObject) {
+async function updatePaymentStatus(org, client, paymentObject) {
   if (paymentObject.links.payout) {
     // Create or update payout
-    // TODO;
-
+    payouts.createOrUpdate(org, client, paymentObject.links.payout);
   }
 
   await mysql.query("UPDATE `payments` SET `Status` = ?, `Payout` = ? WHERE `PMkey` = ?", [
@@ -43,12 +43,11 @@ async function created(org, client, event) {
   if (!exists) {
     var result, fields;
     let payment = await client.payments.find(event.links.payment);
-    
-    if (event.links.payout) {
-      // Create or update payout
-      // TODO;
 
-    }
+    if (payment.links.payout) {
+    // Create or update payout
+    payouts.createOrUpdate(org, client, payment.links.payout);
+  }
 
     // Get mandate and user
     [result, fields] = await mysql.query("SELECT MandateID, UserID FROM paymentMandates WHERE Mandate = ?", [payment.links.mandate]);
@@ -94,13 +93,13 @@ async function created(org, client, event) {
 
 async function customerApprovalGranted(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 async function customerApprovalDenied(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
 
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 
   var userRow, fields;
 
@@ -121,22 +120,22 @@ async function customerApprovalDenied(org, client, event) {
 
 async function submitted(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 async function confirmed(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 async function chargebackCancelled(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 async function paidOut(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 
   await mysql.query("UPDATE `paymentsPending` SET `Status` = ? WHERE `PMkey` = ?", [
     'Paid',
@@ -146,18 +145,18 @@ async function paidOut(org, client, event) {
 
 async function lateFailureSettled(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 async function chargebackSettled(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 async function failed(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
 
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 
   var [userRow, fields] = await mysql.query("SELECT payments.UserID, Name, Amount, Forename, Surname, EmailAddress FROM payments INNER JOIN users ON payments.UserID = users.UserID WHERE PMkey = ?", [
     payment.id
@@ -221,7 +220,7 @@ async function failed(org, client, event) {
 
 async function chargedBack(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 
   let [userRow, fields] = await mysql.query("SELECT payments.UserID, Name, Amount, Forename, Surname, EmailAddress FROM payments INNER JOIN users ON payments.UserID = users.UserID WHERE PMkey = ?", [
     payment.id
@@ -229,7 +228,7 @@ async function chargedBack(org, client, event) {
 
   // Send email to user
   let name = userRow[0].Forename + ' ' + userRow[0].Surname;
-  let subject = userRow[0].Name + ' payment failed';
+  let subject = userRow[0].Name + ' payment charged back';
   let content = '<p>Hello ' + escape(name) + ',</p>';
   content += '<p>Your Direct Debit payment (' + escape(userRow[0].Name) + ') of £' + userRow[0].Amount + ', has been charged back to us. You will be contacted by the treasurer to confirm the situation and arrange for you to pay and outstanding amounts.</p>';
   content += '<p>Under the direct debit guarantee, your bank should have refunded you £' + userRow[0].Amount + ' immediately.</p>';
@@ -243,12 +242,12 @@ async function chargedBack(org, client, event) {
 
 async function cancelled(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 async function resubmissionRequested(org, client, event) {
   let payment = await client.payments.find(event.links.payment);
-  updatePaymentStatus(client, payment);
+  updatePaymentStatus(org, client, payment);
 }
 
 exports.handleEvent = async function (event) {
