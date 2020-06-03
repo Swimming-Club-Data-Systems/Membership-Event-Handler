@@ -17,6 +17,7 @@ async function created(client, event) {
 }
 
 async function cancelled(client, event) {
+  var mandates, prefCount, fields, prefMandate;
   try {
     // Disable in system
     await mysql.query("UPDATE `paymentMandates` SET `InUse` = ? WHERE `Mandate` = ?", [0, event.links.mandate]);
@@ -32,8 +33,8 @@ async function cancelled(client, event) {
       await mysql.query("DELETE FROM `paymentPreferredMandate` WHERE `MandateID` = ?", [MandateID]);
 
       // Get any other active mandates
-      let [mandates, fields] = await mysql.query("SELECT MandateID FROM paymentMandates WHERE UserID = ? AND InUse = 1", [rows[0].UserID]);
-      let [prefCount, fields] = await mysql.query("SELECT COUNT(*) FROM paymentPreferredMandate WHERE UserID = ?", [rows[0].UserID]);
+      [mandates, fields] = await mysql.query("SELECT MandateID FROM paymentMandates WHERE UserID = ? AND InUse = 1", [rows[0].UserID]);
+      [prefCount, fields] = await mysql.query("SELECT COUNT(*) FROM paymentPreferredMandate WHERE UserID = ?", [rows[0].UserID]);
 
       if (prefCount[0]['COUNT(*)'] == 0 && mandates.length > 0) {
         // Set first available as preferred
@@ -41,8 +42,8 @@ async function cancelled(client, event) {
       }
 
       // Get info about current pref and old pref
-      let [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates INNER JOIN paymentPreferredMandate ON paymentPreferredMandate.MandateID = paymentMandates.MandateID WHERE paymentPreferredMandate.UserID = ?", [rows[0].UserID]);
-      let [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates WHERE MandateID = ?", [mandateId]);
+      [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates INNER JOIN paymentPreferredMandate ON paymentPreferredMandate.MandateID = paymentMandates.MandateID WHERE paymentPreferredMandate.UserID = ?", [rows[0].UserID]);
+      [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates WHERE MandateID = ?", [mandateId]);
 
       // If user is active
       if (rows[0].Active) {
@@ -80,9 +81,11 @@ async function transferred(client, event) {
 
 async function expired(client, event) {
   await mysql.query("UPDATE `paymentMandates` SET `InUse` = ? WHERE `Mandate` = ?", [false, event.links.mandate]);
+
+  var fields, mandates, prefCount, prefMandate, rows;
   
   // Get the user ID, set to another bank if possible and let them know.
-  let [rows, fields] = await mysql.query("SELECT users.UserID, `Forename`, `Surname`, `EmailAddress`, `MandateID`, users.Active FROM `paymentMandates` INNER JOIN `users` ON users.UserID = paymentMandates.UserID WHERE `Mandate` = ?", [event.links.mandate]);
+  [rows, fields] = await mysql.query("SELECT users.UserID, `Forename`, `Surname`, `EmailAddress`, `MandateID`, users.Active FROM `paymentMandates` INNER JOIN `users` ON users.UserID = paymentMandates.UserID WHERE `Mandate` = ?", [event.links.mandate]);
 
   if (rows[0]) {
     // User exists
@@ -92,8 +95,8 @@ async function expired(client, event) {
     await mysql.query("DELETE FROM `paymentPreferredMandate` WHERE `MandateID` = ?", [MandateID]);
 
     // Get any other active mandates
-    let [mandates, fields] = await mysql.query("SELECT MandateID FROM paymentMandates WHERE UserID = ? AND InUse = 1", [rows[0].UserID]);
-    let [prefCount, fields] = await mysql.query("SELECT COUNT(*) FROM paymentPreferredMandate WHERE UserID = ?", [rows[0].UserID]);
+    [mandates, fields] = await mysql.query("SELECT MandateID FROM paymentMandates WHERE UserID = ? AND InUse = 1", [rows[0].UserID]);
+    [prefCount, fields] = await mysql.query("SELECT COUNT(*) FROM paymentPreferredMandate WHERE UserID = ?", [rows[0].UserID]);
 
     if (prefCount[0]['COUNT(*)'] == 0 && mandates.length > 0) {
       // Set first available as preferred
@@ -101,8 +104,8 @@ async function expired(client, event) {
     }
 
     // Get info about current pref and old pref
-    let [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates INNER JOIN paymentPreferredMandate ON paymentPreferredMandate.MandateID = paymentMandates.MandateID WHERE paymentPreferredMandate.UserID = ?", [rows[0].UserID]);
-    let [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates WHERE MandateID = ?", [mandateId]);
+    [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates INNER JOIN paymentPreferredMandate ON paymentPreferredMandate.MandateID = paymentMandates.MandateID WHERE paymentPreferredMandate.UserID = ?", [rows[0].UserID]);
+    [prefMandate, fields] = await mysql.query("SELECT Mandate, BankName, AccountHolderName, AccountNumEnd FROM paymentMandates WHERE MandateID = ?", [mandateId]);
 
     // If user is active
     if (rows[0].Active) {

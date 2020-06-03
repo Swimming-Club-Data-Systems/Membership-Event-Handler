@@ -44,13 +44,14 @@ async function created(client, event) {
     }
 
     // Get mandate and user
-    let [manUser, fields] = await mysql.query("SELECT MandateID, UserID FROM paymentMandates WHERE Mandate = ?", [payment.links.mandate]);
+    let [result, fields] = await mysql.query("SELECT MandateID, UserID FROM paymentMandates WHERE Mandate = ?", [payment.links.mandate]);
+    var manUser = result;
     if (manUser[0]) {
       // Sort details
       let date = moment.utc(payment.created_at).format('Y-MM-DD');
 
       // Add payment to db
-      let [res, fields] = await mysql.query("INSERT INTO `payments` (`Date`, `Status`, `UserID`, `MandateID`, `Name`, `Amount`, `Currency`, `PMkey`, `Type`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+      let [result, fields] = await mysql.query("INSERT INTO `payments` (`Date`, `Status`, `UserID`, `MandateID`, `Name`, `Amount`, `Currency`, `PMkey`, `Type`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [
         date,
         payment.status,
         manUser[0].UserID,
@@ -66,7 +67,7 @@ async function created(client, event) {
       let paymentId = res.insertId;
 
       // Check if we need to add an item to payments pending for tracking
-      let [result, fields] = await mysql.query("SELECT COUNT(*) FROM paymentsPending WHERE Payment = ?", [paymentId]);
+      [result, fields] = await mysql.query("SELECT COUNT(*) FROM paymentsPending WHERE Payment = ?", [paymentId]);
       if (result[0]['COUNT(*)'] == 0) {
         await mysql.query("INSERT INTO paymentsPending (`Date`, `Status`, `UserID`, `Name`, `Amount`, `Currency`, `PMkey`, `Type`, `Payment`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [
           date,
