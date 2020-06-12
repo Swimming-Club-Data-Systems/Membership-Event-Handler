@@ -2,11 +2,10 @@
  * Handle stripe payout events
  */
 
-const orgMethods = require('./organisation');
 const mysql = require('../../common/mysql');
 const moment = require('moment-timezone');
 
-exports.handlePayout = async function (org, stripe, payout, account) {
+exports.handlePayout = async function (org, stripe, payout) {
   var results, fields;
   [results, fields] = await mysql.query("SELECT COUNT(*) FROM stripePayouts WHERE ID = ?", [payout.id]);
 
@@ -15,8 +14,6 @@ exports.handlePayout = async function (org, stripe, payout, account) {
     amount = 0;
   }
   var date = moment.utc(payout.arrival_date);
-
-  var tenant = await orgMethods.getOrganisation(account);
 
   if (results[0]['COUNT(*)'] > 0) {
     // Update payout item
@@ -31,7 +28,7 @@ exports.handlePayout = async function (org, stripe, payout, account) {
       payout.id,
       amount,
       date.format("Y-MM-DD"),
-      tenant.tenant,
+      org.tenant,
     ])
   }
 }
