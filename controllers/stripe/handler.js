@@ -3,7 +3,7 @@
  */
 
 const mysql = require('../../common/mysql');
-
+const orgMethods = require('./organisation');
 const payouts = require('./payout');
 const paymentMethods = require('./payment-method');
 const paymentIntents = require('./payment-intent');
