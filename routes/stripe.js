@@ -1,11 +1,7 @@
 var express = require('express');
 var router = express.Router();
+var handler = require('../controllers/stripe/handler');
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.json({
-    about: 'SCDS Membership Stripe Webhook Handler'
-  });
-});
+router.post('/', handler.webhookHandler);
 
 module.exports = router;
