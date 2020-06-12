@@ -6,6 +6,7 @@ const mysql = require('../../common/mysql');
 
 const payouts = require('./payout');
 const paymentMethods = require('./payment-method');
+const paymentIntents = require('./payment-intent');
 
 const process = require('process');
 
@@ -16,6 +17,7 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 exports.webhookHandler = async function (req, res, next) {
   const sig = req.get('stripe-signature');
   let event;
+  var paymentMethod, paymentIntent, payout;
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
@@ -31,36 +33,36 @@ exports.webhookHandler = async function (req, res, next) {
       // Handle the event
       switch (event.type) {
         case 'payment_method.card_automatically_updated':
-          const paymentMethod = event.data.object;
+          paymentMethod = event.data.object;
+          paymentMethods.handleUpdate(org, stripe, paymentMethod);
           break;
         case 'payment_method.updated':
-          const paymentMethod = event.data.object;
+          paymentMethod = event.data.object;
+          paymentMethods.handleUpdate(org, stripe, paymentMethod);
           break;
         case 'payment_intent.succeeded':
-          const paymentIntent = event.data.object;
+          paymentIntent = event.data.object;
+          paymentIntents.handleCompletedPaymentIntent(org, stripe, paymentIntent);
           break;
         case 'payment_intent.created':
-          const paymentIntent = event.data.object;
+          paymentIntent = event.data.object;
+          paymentIntents.handleNewPaymentIntent(org, stripe, paymentIntent);
           break;
         case 'payment_method.detached':
-          const paymentMethod = event.data.object;
-          // Then define and call a method to handle the successful payment intent.
-          // handlePaymentIntentSucceeded(paymentIntent);
+          paymentMethod = event.data.object;
+          paymentMethods.handleDetach(org, stripe, paymentMethod);
           break;
-        case 'payment_method.attached':
-          const paymentMethod = event.data.object;
-          // Then define and call a method to handle the successful attachment of a PaymentMethod.
-          // handlePaymentMethodAttached(paymentMethod);
-          break;
+        // case 'payment_method.attached':
+        //   const paymentMethod = event.data.object;
+        //   break;
         case 'payout.canceled':
         case 'payout.created':
         case 'payout.failed':
         case 'payout.paid':
         case 'payout.updated':
-          const payout = event.data.object;
-          payouts.handlePayout(org, stripe, payout)
+          payout = event.data.object;
+          payouts.handlePayout(org, stripe, payout);
           break;
-        // ... handle other event types
         default:
           // Unexpected event type
           return res.status(400).end();
@@ -73,9 +75,9 @@ exports.webhookHandler = async function (req, res, next) {
     res.json({ received: true });
 
   } catch (err) {
-
+    console.error(err);
   }
 
 
-  
+
 }
