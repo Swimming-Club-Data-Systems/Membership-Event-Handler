@@ -3,6 +3,7 @@
  */
 
 const mysql = require('../../common/mysql');
+const galas = require('./payment-intent-handlers/gala');
 const moment = require('moment-timezone');
 
 exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
@@ -27,6 +28,7 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
 
   if (results[0]['COUNT(*)'] > 0) {
     // This payment was for galas so run the code for a successful gala payment
+    galas.paymentIntentHandler(org, stripe, payment);
   } else {
     // Run code for any other type of payment
     // Such types do not exist yet but this is passive provision

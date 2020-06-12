@@ -25,7 +25,6 @@ function getPool() {
   if (pool) {
     return pool;
   } else {
-    console.trace("Here I am!")
     throw 'No connection pool';
   }
 }

@@ -75,7 +75,8 @@ exports.webhookHandler = async function (req, res, next) {
     res.json({ received: true });
 
   } catch (err) {
-    console.error(err);
+    // console.error(err);
+    return res.status(400).end();
   }
 
 

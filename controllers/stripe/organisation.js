@@ -8,7 +8,7 @@ exports.getOrganisation = async function (org) {
   return new Promise(async (resolve, reject) => {
     var results, fields;
     try {
-      [results, fields] = await mysql.query("SELECT `Value`, tenants.ID, tenants.Name, tenants.Email FROM `tenantOptions` INNER JOIN tenants ON tenantOptions.Tenant = tenants.id WHERE Option = STRIPE_ACCOUNT_ID AND Value = ?", [org]);
+      [results, fields] = await mysql.query("SELECT `Value`, tenants.ID, tenants.Name, tenants.Email FROM `tenantOptions` INNER JOIN tenants ON tenantOptions.Tenant = tenants.id WHERE Option = 'STRIPE_ACCOUNT_ID' AND Value = ?", [org]);
 
       if (results.length == 0) reject({ message: 'No results' });
 
@@ -21,7 +21,7 @@ exports.getOrganisation = async function (org) {
         sendingEmail: 'noreply@myswimmingclub.uk'
       });
     } catch (err) {
-      reject(error);
+      reject(err);
     }
   });
 }
