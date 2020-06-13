@@ -4,6 +4,7 @@
 
 const mysql = require("../../../common/mysql");
 const moment = require('moment-timezone');
+const BigNumber = require('bignumber.js');
 const escape = require('escape-html');
 const Email = require('../../email/email');
 const stripeHelpers = require('../helpers');
@@ -73,7 +74,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
 
     var userId = results[0].User;
 
-    if (intent.charges.data[0].payment_method_details.card.wallet) {
+    if (intent.charges.data[0].payment_method_details.card.wallet != null) {
       reuse = false;
     }
 
@@ -265,7 +266,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
               databaseId,
               'Gala entry',
               'Gala entry number ' + entry.EntryID,
-              entry.FeeToPay,
+              parseInt((new BigNumber(entry.FeeToPay)).shiftedBy(2).decimalPlaces(0)),
               intent.currency,
               0,
             ]);
@@ -288,7 +289,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
             message += '<p>' + escape(entry.MForename + ' ' + entry.MSurname) + ' for ' + escape(entry.GalaName) + '</p>';
           });
 
-          message += '<p><strong>Total</strong> <br>&pound;' + escape(intent.amount) + '</p><p><strong>Payment reference</strong> <br>SPM' + databaseId + '</p>';
+          message += '<p><strong>Total</strong> <br>&pound;' + escape((new BigNumber(intent.amount)).shiftedBy(-2).decimalPlaces(2).toFormat(2)) + '</p><p><strong>Payment reference</strong> <br>SPM' + databaseId + '</p>';
 
           if (intent.charges.data[0].payment_method_details.card) {
             message += '<p><strong>Card</strong> <br>' + stripeHelpers.getCardBrand(intent.charges.data[0].payment_method_details.card.brand) + ' ' + intent.charges.data[0].payment_method_details.card.funding + ' card <br>&middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; ' + intent.charges.data[0].payment_method_details.card.last4 + '</p>';
