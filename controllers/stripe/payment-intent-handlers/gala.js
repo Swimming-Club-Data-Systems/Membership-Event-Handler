@@ -192,7 +192,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
         pm.card.brand,
         pm.card.country,
         pm.card.exp_month,
-        pm.card.ep_year,
+        pm.card.exp_year,
         pm.card.funding,
         pm.card.last4,
         pm.card.fingerprint,
@@ -282,8 +282,6 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
           }
 
           var message = '<p>Here is your payment receipt for your gala entries.</p>';
-          message += '<p>In accordance with card network rules, refunds for gala rejections will only be made to the payment card which was used.</p>';
-          message += '<p>Should you wish to withdraw your swimmers you will need to contact the gala coordinator. Depending on the gala and host club, you may not be eligible for a refund in such circumstances unless you have a reason which can be evidenced, such as a doctors note.</p>';
 
           entries.forEach(entry => {
             message += '<p>' + escape(entry.MForename + ' ' + entry.MSurname) + ' for ' + escape(entry.GalaName) + '</p>';
@@ -337,6 +335,9 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
             message += '</address>';
 
           }
+
+          message += '<p>In accordance with card network rules, refunds for gala rejections will only be made to the payment card which was used.</p>';
+          message += '<p>Should you wish to withdraw your swimmers you will need to contact the gala coordinator. Depending on the gala and host club, you may not be eligible for a refund in such circumstances unless you have a reason which can be evidenced, such as a doctors note.</p>';
 
           var email, name;
           if (intent.charges.data[0].billing_details.email) {
