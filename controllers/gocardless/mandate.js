@@ -2,7 +2,7 @@
  * Handle GC mandate events
  */
 
-const orgMethods = require('./organisation');
+const orgMethods = require('../organisation');
 const mysql = require('../../common/mysql');
 const escape = require('escape-html');
 const Email = require('../email/email');
@@ -97,7 +97,7 @@ async function cancelled(org, client, event) {
         let name = rows[0].Forename + ' ' + rows[0].Surname;
         let subject = 'Direct debit mandate cancelled';
         let content = '<p>Hello ' + escape(name) + ',</p>';
-        content += '<p>Your Direct Debit mandate for ' + escape(org.name) + ' has been cancelled.</p>';
+        content += '<p>Your Direct Debit mandate for ' + escape(org.getName()) + ' has been cancelled.</p>';
 
         if (oldMandate[0]) {
           content += '<p>The cancelled mandate was on ' + escape(oldMandate[0].AccountHolderName) + '\'s account with ' + escape(oldMandate[0].BankName) + '. Account number ending in &middot;&middot;&middot;&middot;&middot;&middot;'.escape(oldMandate[0].AccountNumEnd) + '. Our internal reference for the mandate was ' + escape(oldMandate[0].Mandate) + '.</p>';
@@ -109,7 +109,7 @@ async function cancelled(org, client, event) {
 
         content += '<p>Sign in to your club account to make any changes to your account and direct debit options.</p>';
 
-        content += '<p>Kind regards,<br>The ' + escape(org.name) + ' team</p>';
+        content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
         let mail = new Email(name, rows[0].EmailAddress, org, subject, content);
         mail.send();
@@ -188,8 +188,8 @@ async function replaced(org, client, event) {
 
 exports.handleEvent = async function (event) {
   try {
-    let org = await orgMethods.getOrganisation(event.links.organisation);
-    let client = await orgMethods.getClient(org.accessToken);
+    let org = await orgMethods.fromGoCardlessAccount(event.links.organisation);
+    let client = await org.getGoCardlessClient();
 
     switch (event.action) {
       case 'created':

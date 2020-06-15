@@ -3,7 +3,7 @@
  */
 
 const mysql = require('../../common/mysql');
-const orgMethods = require('./organisation');
+const orgMethods = require('../organisation');
 const payouts = require('./payout');
 const paymentMethods = require('./payment-method');
 const paymentIntents = require('./payment-intent');
@@ -26,7 +26,7 @@ exports.webhookHandler = async function (req, res, next) {
   }
 
   try {
-    const org = await orgMethods.getOrganisation(event.account);
+    const org = await orgMethods.fromStripeAccount(event.account);
 
     // Do if event has same mode as system
     if (event.livemode === (process.env.NODE_ENV === 'production')) {

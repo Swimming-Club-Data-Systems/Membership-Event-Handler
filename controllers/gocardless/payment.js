@@ -2,7 +2,7 @@
  * Handle GC payment events
  */
 
-const orgMethods = require('./organisation');
+const orgMethods = require('../organisation');
 const payouts = require('./payout');
 const mysql = require('../../common/mysql');
 const moment = require('moment-timezone');
@@ -116,7 +116,7 @@ async function customerApprovalDenied(org, client, event) {
   let subject = userRow[0].Name + ' payment failed';
   let content = '<p>Hello ' + escape(name) + ',</p>';
   content += '<p>Your Direct Debit payment (' + escape(userRow[0].Name) + ') of £' + userRow[0].Amount + ', has failed because customer approval was denied. This means your bank requires two people two authorise a direct debit mandate on your account and that this authorisation has not been given. Because we cannot automatically retry this payment, you will be contacted by the treasurer to arrange payment and correct you direct debit mandate.</p>';
-  content += '<p>Kind regards,<br>The ' + escape(org.name) + ' team</p>';
+  content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
   let mail = new Email(name, userRow[0].EmailAddress, org, subject, content);
   mail.send();
@@ -213,7 +213,7 @@ async function failed(org, client, event) {
         content += '<p>We have retried this payment request three times and it has still not succeeded. As a result, you will need to contact the club treasurer to take further action. Failure to pay may lead to the suspension or termination of your membership.</p>';
       }
 
-      content += '<p>Kind regards,<br>The ' + escape(org.name) + ' team</p>';
+      content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
       let mail = new Email(name, user.EmailAddress, org, subject, content);
       mail.send();
@@ -238,7 +238,7 @@ async function chargedBack(org, client, event) {
   content += '<p>Under the direct debit guarantee, your bank should have refunded you £' + userRow[0].Amount + ' immediately.</p>';
   content += '<p>If you made an indemnity claim because you mistakenly misidentified the payment, please get in touch with us straight away. If you are ever unsure about the amount we are charging you, get in touch with us straight away or log in to your account to see a full itemised list for this payment.</p>';
 
-  content += '<p>Kind regards,<br>The ' + escape(org.name) + ' team</p>';
+  content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
   let mail = new Email(name, userRow[0].EmailAddress, org, subject, content);
   mail.send();
@@ -256,8 +256,8 @@ async function resubmissionRequested(org, client, event) {
 
 exports.handleEvent = async function (event) {
   try {
-    let org = await orgMethods.getOrganisation(event.links.organisation);
-    let client = await orgMethods.getClient(org.accessToken);
+    let org = await orgMethods.fromGoCardlessAccount(event.links.organisation);
+    let client = await org.getGoCardlessClient();
     
     switch (event.action) {
       case 'created':

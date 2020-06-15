@@ -42,7 +42,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
       expand: ['customer', 'payment_method'],
     },
       {
-        stripeAccount: org.accountId
+        stripeAccount: org.getStripeAccount()
       }
     );
 
@@ -118,7 +118,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
           email: user.EmailAddress,
           phone: user.Mobile
         }, {
-          stripeAccount: org.accountId
+          stripeAccount: org.getStripeAccount()
         });
 
         await mysql.query("INSERT INTO stripeCustomers (User, CustomerID) VALUES (?, ?)", [
@@ -134,7 +134,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
         var customer = await stripe.customers.retrieve(
           results[0]['CustomerID'],
           {
-            stripeAccount: org.accountId
+            stripeAccount: org.getStripeAccount()
           });
 
         // Check if any details need updating
@@ -146,7 +146,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
               email: user.EmailAddress,
               phone: user.Mobile
             }, {
-            stripeAccount: org.accountId
+            stripeAccount: org.getStripeAccount()
           }
           );
         }
@@ -156,7 +156,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
       var pm = await stripe.paymentMethods.retrieve(
         method.id,
         {
-          stripeAccount: org.accountId
+          stripeAccount: org.getStripeAccount()
         }
       );
 
@@ -276,7 +276,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
             pm = await stripe.paymentMethods.retrieve(
               intent.payment_method.id,
               {
-                stripeAccount: org.accountId
+                stripeAccount: org.getStripeAccount()
               }
             );
           }
@@ -305,7 +305,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
           if (intent.charges.data[0].billing_details.address) {
             var billingAddress = intent.charges.data[0].billing_details.address;
 
-            message += '<p class="mb-0><strong>Billing address</strong></p>';
+            message += '<p class="mb-0"><strong>Billing address</strong></p>';
             message += '<address>';
 
             if (billingAddress.name) {

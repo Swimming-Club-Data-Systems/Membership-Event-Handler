@@ -28,7 +28,7 @@ exports.handlePayout = async function (org, stripe, payout) {
       payout.id,
       amount,
       date.format("Y-MM-DD"),
-      org.tenant,
+      org.id,
     ])
   }
 }
