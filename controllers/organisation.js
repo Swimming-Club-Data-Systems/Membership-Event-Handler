@@ -30,7 +30,7 @@ class Organisation {
       loaded: false,
     }
 
-    await this.getKeys();
+    // await this.getKeys();
   }
 
   static async fromId(id) {
@@ -41,7 +41,9 @@ class Organisation {
 
     if (results.length > 0) {
       let r = results[0];
-      return new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      await org.getKeys();
+      return org;
     } else {
       return null;
     }
@@ -55,7 +57,9 @@ class Organisation {
 
     if (results.length > 0) {
       let r = results[0];
-      return new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      await org.getKeys();
+      return org;
     } else {
       return null;
     }
@@ -69,7 +73,9 @@ class Organisation {
 
     if (results.length > 0) {
       let r = results[0];
-      return new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      await org.getKeys();
+      return org;
     } else {
       return null;
     }
@@ -124,7 +130,7 @@ class Organisation {
     this.goCardless.loaded = true;
   }
 
-  getGoCardlessAccessToken() {
+  async getGoCardlessAccessToken() {
     if (!this.goCardless.loaded) {
       await this.loadGoCardless();
     }
@@ -132,7 +138,7 @@ class Organisation {
     return this.goCardless.token;
   }
 
-  getGoCardlessOrgId() {
+  async getGoCardlessOrgId() {
     if (!this.goCardless.loaded) {
       await this.loadGoCardless();
     }
@@ -147,8 +153,9 @@ class Organisation {
         environment = constants.Environments.Sandbox;
       }
   
+      let accessToken = await this.getGoCardlessAccessToken();
       client = gocardless(
-        this.getGoCardlessAccessToken(),
+        accessToken,
         environment,
       );
   
