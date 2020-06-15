@@ -4,6 +4,7 @@
 
 const htmlToText = require('html-to-text');
 const sgMail = require('@sendgrid/mail');
+const time = require('moment-timezone');
 
 
 class Email {
@@ -28,16 +29,55 @@ class Email {
     }    
     this.subject = subject;
     this.htmlContent = content;
-    this.textContent = htmlToText.fromString;
+    this.textContent = htmlToText.fromString(content);
   }
 
   getHtml() {
 
+    let footer = '<address>'
+    footer += this.org.getName() + '<br>';
+    address.forEach(line => {
+      footer += line + '<br>';
+    });
+    footer += '</address>';
+
+    footer += '<p>Sent automatically by the by ' + this.org.getName() + ' Membership System. Built by SCDS, Licensed to ' + this.org.getName() + '.</p>';
+
+    footer += '<p>Have questions? Contact us at ' + this.org.getKey('CLUB_EMAIL') + '.</p>';
+
+    if (false) {
+      footer += '<p>Unsubscribe at UNSUB_LINK.</p>';
+    }
+
+    footer += '<p>Content copyright ' + time.tz('Europe/London').format('Y') + ', Design copyright ' + time.tz('Europe/London').format('Y') + ' SCDS.</p>';
+
+    return this.htmlContent + footer;
   }
 
   getText() {
-    let footer = '\r\n\r\n' + org.getName() + '\r\n';
-    footer += 'Sent automatically by the by ' + org.getName() + ' Membership System. Built by SCDS, Licensed to ' + org.getName() + '.\r\n\r\n';
+    let address = [];
+    if (this.org.getKey('CLUB_ADDRESS')) {
+      try {
+        let address = JSON.parse(this.org.getKey('CLUB_ADDRESS'))
+      } catch (err) {}
+    }
+
+    let footer = '\r\n\r\n' + this.org.getName() + '\r\n';
+    address.forEach(line => {
+      footer += line + '\r\n';
+    });
+    footer += '\r\n';
+    footer += 'Sent automatically by the by ' + this.org.getName() + ' Membership System. Built by SCDS, Licensed to ' + this.org.getName() + '.\r\n\r\n';
+
+    footer += 'Have questions? Contact us at ' + this.org.getKey('CLUB_EMAIL') + '.\r\n\r\n';
+
+    if (false) {
+      footer += 'Unsubscribe at UNSUB_LINK.\r\n\r\n';
+    }
+
+    footer += 'Content copyright ' + time.tz('Europe/London').format('Y') + ', Design copyright ' + time.tz('Europe/London').format('Y') + ' SCDS.';
+
+    return this.textContent + footer;
   }
 
   send() {
