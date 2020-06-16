@@ -3,7 +3,7 @@ const mysql = require('../common/mysql');
 /**
  * Organisation (tenant) class for SCDS membership
  */
-class Organisation {
+module.exports = class Organisation {
 
   // Instance vars
   keys;

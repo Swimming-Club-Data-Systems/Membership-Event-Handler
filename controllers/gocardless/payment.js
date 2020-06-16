@@ -2,7 +2,7 @@
  * Handle GC payment events
  */
 
-const orgMethods = require('../organisation');
+const Organisation = require('../organisation');
 const payouts = require('./payout');
 const mysql = require('../../common/mysql');
 const moment = require('moment-timezone');
@@ -256,7 +256,7 @@ async function resubmissionRequested(org, client, event) {
 
 exports.handleEvent = async function (event) {
   try {
-    let org = await orgMethods.fromGoCardlessAccount(event.links.organisation);
+    let org = await Organisation.fromGoCardlessAccount(event.links.organisation);
     let client = await org.getGoCardlessClient();
     
     switch (event.action) {

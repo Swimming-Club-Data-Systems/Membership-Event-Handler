@@ -2,7 +2,7 @@
  * Handle GC payout events
  */
 
-const orgMethods = require('../organisation');
+const Organisation = require('../organisation');
 const mysql = require('../../common/mysql');
 const moment = require('moment-timezone');
 
@@ -45,7 +45,7 @@ exports.createOrUpdate = async function (org, client, payoutId, update = false) 
 
 exports.handleEvent = async function (event) {
   try {
-    let org = await orgMethods.fromGoCardlessAccount(event.links.organisation);
+    let org = await Organisation.fromGoCardlessAccount(event.links.organisation);
     let client = await org.getGoCardlessClient();
     this.createOrUpdate(org, client, event.links.payout, true);
   } catch (err) {

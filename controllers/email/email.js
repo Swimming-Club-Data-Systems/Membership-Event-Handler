@@ -34,6 +34,13 @@ class Email {
 
   getHtml() {
 
+    let address = [];
+    if (this.org.getKey('CLUB_ADDRESS')) {
+      try {
+        let address = JSON.parse(this.org.getKey('CLUB_ADDRESS'))
+      } catch (err) {}
+    }
+
     let footer = '<address>'
     footer += this.org.getName() + '<br>';
     address.forEach(line => {
@@ -41,7 +48,7 @@ class Email {
     });
     footer += '</address>';
 
-    footer += '<p>Sent automatically by the by ' + this.org.getName() + ' Membership System. Built by SCDS, Licensed to ' + this.org.getName() + '.</p>';
+    footer += '<p>Sent automatically by the by ' + this.org.getName() + ' Membership System. Software used under license.</p>';
 
     footer += '<p>Have questions? Contact us at ' + this.org.getKey('CLUB_EMAIL') + '.</p>';
 
@@ -49,7 +56,7 @@ class Email {
       footer += '<p>Unsubscribe at UNSUB_LINK.</p>';
     }
 
-    footer += '<p>Content copyright ' + time.tz('Europe/London').format('Y') + ', Design copyright ' + time.tz('Europe/London').format('Y') + ' SCDS.</p>';
+    footer += '<p>Content copyright ' + time.tz('Europe/London').format('Y') + ' ' + this.org.getName() + ', Design copyright ' + time.tz('Europe/London').format('Y') + ' SCDS.</p>';
 
     return this.htmlContent + footer;
   }
@@ -93,8 +100,8 @@ class Email {
         email: this.senderEmail
       },
       subject: this.subject,
-      text: this.textContent,
-      html: this.htmlContent,
+      text: this.getText(),
+      html: this.getHtml(),
     };
 
     (async () => {

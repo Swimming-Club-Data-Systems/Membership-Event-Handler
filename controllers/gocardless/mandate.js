@@ -2,7 +2,7 @@
  * Handle GC mandate events
  */
 
-const orgMethods = require('../organisation');
+const Organisation = require('../organisation');
 const mysql = require('../../common/mysql');
 const escape = require('escape-html');
 const Email = require('../email/email');
@@ -188,7 +188,7 @@ async function replaced(org, client, event) {
 
 exports.handleEvent = async function (event) {
   try {
-    let org = await orgMethods.fromGoCardlessAccount(event.links.organisation);
+    let org = await Organisation.fromGoCardlessAccount(event.links.organisation);
     let client = await org.getGoCardlessClient();
 
     switch (event.action) {
