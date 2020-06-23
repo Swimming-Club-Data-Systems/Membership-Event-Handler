@@ -7,6 +7,7 @@ const Organisation = require('../organisation');
 const payouts = require('./payout');
 const paymentMethods = require('./payment-method');
 const paymentIntents = require('./payment-intent');
+const checkoutSessions = require('./checkout-sessions');
 
 const process = require('process');
 
@@ -17,7 +18,7 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 exports.webhookHandler = async function (req, res, next) {
   const sig = req.get('stripe-signature');
   let event;
-  var paymentMethod, paymentIntent, payout;
+  var paymentMethod, paymentIntent, payout, checkoutSession;
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
@@ -62,6 +63,10 @@ exports.webhookHandler = async function (req, res, next) {
         case 'payout.updated':
           payout = event.data.object;
           payouts.handlePayout(org, stripe, payout);
+          break;
+        case 'checkout.session.completed':
+          checkoutSession = event.data.object;
+          checkoutSessions.handleCompleted(org, stripe, checkoutSession);
           break;
         default:
           // Unexpected event type
