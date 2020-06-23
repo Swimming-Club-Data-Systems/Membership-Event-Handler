@@ -8,6 +8,7 @@ const payouts = require('./payout');
 const paymentMethods = require('./payment-method');
 const paymentIntents = require('./payment-intent');
 const checkoutSessions = require('./checkout-sessions');
+const mandates = require('./mandate');
 
 const process = require('process');
 
@@ -67,6 +68,10 @@ exports.webhookHandler = async function (req, res, next) {
         case 'checkout.session.completed':
           checkoutSession = event.data.object;
           checkoutSessions.handleCompleted(org, stripe, checkoutSession);
+          break;
+        case 'mandate.updated':
+          mandate = event.data.object;
+          mandates.handleUpdated(org, stripe, mandate);
           break;
         default:
           // Unexpected event type

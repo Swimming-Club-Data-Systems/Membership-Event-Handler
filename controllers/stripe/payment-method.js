@@ -31,6 +31,11 @@ exports.handleUpdate = async function (org, stripe, pm) {
       pm.id,
     ]);
   } else if (pm.type == 'bacs_debit') {
-
+    // Update bank details
+    await mysql.query("UPDATE stripeMandates SET Last4 = ?, SortCode = ? WHERE ID = ?", [
+      pm.bacs_debit.last4,
+      pm.bacs_debit.sort_code,
+      pm.id,
+    ]);
   }
 }
