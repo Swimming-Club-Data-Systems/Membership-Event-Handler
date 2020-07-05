@@ -14,7 +14,7 @@ exports.moveMembers = async function () {
 
   // For each result, check member is not in squad, if not do the move
   // Then delete the move from the DB
-  results.forEach(move => {
+  results.forEach(async (move) => {
     if (move.Old) {
       try {
         // Remove from old squad
@@ -49,4 +49,25 @@ exports.moveMembers = async function () {
 
     }
   });
+}
+
+/**
+ * Express Handler
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+exports.webEndpoint = async function (req, res, next) {
+  // Call moveMembers
+  try {
+    moveMembers();
+    res.json({
+      status: 200
+    });
+  } catch (err) {
+    res.json({
+      status: 500,
+    });
+  }
 }

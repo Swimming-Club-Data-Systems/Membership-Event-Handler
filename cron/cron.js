@@ -9,6 +9,7 @@ const axios = require('axios').default;
 const dotenv = require('dotenv');
 const fs = require('fs');
 const mysql = require('../common/mysql');
+const squadMoves = require('../controllers/squads/moves');
 
 const timezone = process.env.TIMEZONE || 'Europe/London';
 
@@ -18,7 +19,7 @@ async function getSites() {
   results.forEach(tenant => {
     var web = tenant.ID + '/';
     if (tenant.Code != null) {
-      web = tenant.Code + '/';
+      web = tenant.Code.toLowerCase() + '/';
     }
     sites.push({
       id: tenant.ID,
@@ -119,18 +120,7 @@ let retryDirectDebit = cron.schedule('*/30 * * * *', async () => {
  */
 let handleSquadMoves = cron.schedule('1 * * * *', async () => {
   // console.log('Handle squad moves');
-  const sites = await getSites();
-
-  sites.forEach(site => {
-    axios.get(site.url + 'webhooks/updatesquadmembers')
-      .then(function (response) {
-        // handle success
-      })
-      .catch(function (error) {
-        // handle error
-        console.warn(error);
-      })
-  });
+  squadMoves.moveMembers();
 },
   { timezone: timezone }
 );
