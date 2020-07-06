@@ -30,7 +30,10 @@ app.use('/gocardless', gocardlessRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  res.status(404);
+  res.json({ error: 'Not found' });
+
+  // next(createError(404));
 });
 
 // error handler
