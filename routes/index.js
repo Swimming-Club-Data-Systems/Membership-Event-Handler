@@ -9,10 +9,4 @@ router.get('/', function(req, res, next) {
   });
 });
 
-router.get('/test', function(req, res, next) {
-  var pool = mysql.getPool();
-  let [results, fields] = mysql.query('SELECT Forename, Surname FROM users ORDER BY Forename ASC, Surname ASC');
-  res.json(results);
-});
-
 module.exports = router;
