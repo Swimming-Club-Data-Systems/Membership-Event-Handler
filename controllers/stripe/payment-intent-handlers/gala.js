@@ -37,14 +37,14 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
 
     var reuse = true;
 
-    intent = await stripe.paymentIntents.retrieve(
-      intent.id, {
-      expand: ['customer', 'payment_method'],
-    },
-      {
-        stripeAccount: org.getStripeAccount()
-      }
-    );
+    // intent = await stripe.paymentIntents.retrieve(
+    //   intent.id, {
+    //   expand: ['customer', 'payment_method'],
+    // },
+    //   {
+    //     stripeAccount: org.getStripeAccount()
+    //   }
+    // );
 
     // Get id
     [results, fields] = await mysql.query("SELECT ID FROM stripePayments WHERE Intent = ?", [

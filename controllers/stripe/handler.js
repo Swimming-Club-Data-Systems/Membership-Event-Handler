@@ -42,13 +42,25 @@ exports.webhookHandler = async function (req, res, next) {
           paymentMethod = event.data.object;
           paymentMethods.handleUpdate(org, stripe, paymentMethod);
           break;
-        case 'payment_intent.succeeded':
-          paymentIntent = event.data.object;
-          paymentIntents.handleCompletedPaymentIntent(org, stripe, paymentIntent);
-          break;
         case 'payment_intent.created':
           paymentIntent = event.data.object;
           paymentIntents.handleNewPaymentIntent(org, stripe, paymentIntent);
+          break;
+        case 'payment_intent.processing':
+          paymentIntent = event.data.object;
+          paymentIntents.handleProcessingPaymentIntent(org, stripe, paymentIntent);
+          break;
+        case 'payment_intent.canceled':
+          paymentIntent = event.data.object;
+          paymentIntents.handleCanceledPaymentIntent(org, stripe, paymentIntent);
+          break;
+        case 'payment_intent.payment_failed':
+          paymentIntent = event.data.object;
+          paymentIntents.handleFailedPaymentIntent(org, stripe, paymentIntent);
+          break;
+          case 'payment_intent.succeeded':
+          paymentIntent = event.data.object;
+          paymentIntents.handleCompletedPaymentIntent(org, stripe, paymentIntent);
           break;
         case 'payment_method.detached':
           paymentMethod = event.data.object;
