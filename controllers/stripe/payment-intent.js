@@ -5,6 +5,9 @@
 const mysql = require('../../common/mysql');
 const galas = require('./payment-intent-handlers/gala');
 const moment = require('moment-timezone');
+const BigNumber = require('bignumber.js');
+const escape = require('escape-html');
+const Email = require('../email/email');
 
 exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
   var results, fields;
@@ -104,28 +107,91 @@ exports.handleFailedPaymentIntent = async function (org, stripe, payment) {
     }
   );
 
-  if (payment.payment_method.type === 'bacs_debit') {
+  if (payment.charges.data[0].payment_method_details.type === 'bacs_debit') {
 
-    // Get information about the charge failure
-    if (payment.charges.data[0].failure_code) {
-      var failureCode = payment.charges.data[0].failure_code;
-
-      if (failureCode === 'generic_could_not_process' || failureCode === 'insufficient_funds') {
-        // Can retry payment at some point by re-confirming
-      }
-
-      // Store failure code on row
-      // [results, fields] = await mysql.query("UPDATE `payments` SET `Status` = ? WHERE `stripePaymentIntent` = ?", [
-      //   payment.status,
-      //   payment.id,
-      // ]);
-    }
-
-    // Handle direct debit payment
+    // Handle direct debit payment status update
     [results, fields] = await mysql.query("UPDATE `payments` SET `Status` = ? WHERE `stripePaymentIntent` = ?", [
       payment.status,
       payment.id,
     ]);
+
+    // Work out UserID
+    [results, fields] = await mysql.query("SELECT payments.UserID, users.EmailAddress, users.Forename, users.Surname, stripeMandates.SortCode, stripeMandates.Last4, stripeMandates.Reference, payments.Name, payments.Amount FROM payments INNER JOIN users ON users.UserID = payments.UserID INNER JOIN stripeMandates ON payments.stripeMandate = stripeMandates.ID WHERE stripePaymentIntent = ? AND users.Tenant = ?", [
+      payment.id,
+      org.getId(),
+    ]);
+
+    if (results.length > 0) {
+      var details = results[0];
+      var retrying = false;
+
+      // Work out resubmission date
+      var date = moment.tz('Europe/London');
+      date.add(7, 'days');
+      date.tz('UTC')
+      var dbDate = date.format('Y-MM-DD');
+
+      // Get information about the charge failure
+      if (payment.charges.data[0].failure_code) {
+        var failureCode = payment.charges.data[0].failure_code;
+
+        // Set failure code
+        [results, fields] = await mysql.query("UPDATE `payments` SET `stripeFailureCode` = ? WHERE `stripePaymentIntent` = ?", [
+          failureCode,
+          payment.id,
+        ]);
+
+        if (failureCode === 'generic_could_not_process' || failureCode === 'insufficient_funds') {
+          // Prepare for retry at later date
+
+          // Count existing retries
+          // Add to db
+          [results, fields] = await mysql.query("SELECT COUNT(*) FROM `paymentRetries` WHERE `UserID` = ? AND `PMKey` = ?;", [
+            details['UserID'],
+            payment.id,
+          ]);
+
+          // Max retries = 3
+          if (results[0]['COUNT(*)'] < 3) {
+            try {
+              // Add to db
+              [results, fields] = await mysql.query("INSERT INTO paymentRetries (`UserID`, `Day`, `PMKey`, `Tried`) VALUES (?, ?, ?, ?)", [
+                details['UserID'],
+                dbDate,
+                payment.id,
+                false,
+              ]);
+
+              retrying = true;
+            } catch (err) {
+              // Do nothing - just means retrying stays false
+            }
+          }
+        }
+      }
+
+      // Send user an email
+      var name = details['Forename'] + ' ' + details['Surname'];
+      var email = details['EmailAddress'];
+      var message = '<p>Hello ' + escape(name) + ',</p>';
+      message += '<p>Your &pound;' + escape((new BigNumber(details['Amount'])).shiftedBy(-2).decimalPlaces(2).toFormat(2)) + ' Direct Debit payment for ' + escape(details['Name']) + ' has failed.</p>';
+      message += '<p>We tried to take this payment from the following bank account:</p>';
+      message += '<ul><li><strong>Sort Code:</strong> ' + escape(details['SortCode'].substr(0, 2) + '-' + details['SortCode'].substr(2, 2) + '-' + details['SortCode'].substr(4, 2)) + '</li><li><strong>Account Number:</strong> &middot;&middot;&middot;&middot;' + escape(details['Last4']) + '</li></ul>';
+
+      // If retrying, include details
+      if (retrying) {
+        message += '<p>We plan to retry this payment automatically in around ten working days. The payment will come from the bank account identified above with the reference ' + escape(details['Reference']) + '.</p>';
+        message += '<p>Please ensure you have enough money (&pound;' + escape((new BigNumber(details['Amount'])).shiftedBy(-2).decimalPlaces(2).toFormat(2)) + ') in your bank account before ' + escape(date.format('dddd Do MMMM Y')) + ' - Your bank may charge you penalty fees for direct debits which fail due to a lack of funds.</p>';
+      } else {
+        message += '<p>We cannot automatically retry this payment. Please get in touch with your treasurer.</p>';
+      }
+
+      message += '<p>Thank you,<br>The ' + escape(org.getName()) + ' team</p>'
+
+      let mail = new Email(name, email, org, 'Your Direct Debit has failed', message);
+      mail.send();
+
+    }
   } else {
     // Run code for any other type of payment
     // Such types do not exist yet but this is passive provision
@@ -146,7 +212,7 @@ exports.handleNewPaymentIntent = async function (org, stripe, payment) {
   );
 
   // Decide if Direct Debit
-  if (intent.payment_method.type === 'bacs_debit') {
+  if (payment.payment_method.type && payment.payment_method.type === 'bacs_debit') {
 
   } else {
 

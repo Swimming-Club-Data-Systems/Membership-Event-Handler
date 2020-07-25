@@ -11,6 +11,7 @@ const fs = require('fs');
 const mysql = require('../common/mysql');
 const squadMoves = require('../controllers/squads/moves');
 const contactTracing = require('../controllers/covid/contact-tracing');
+const directDebitRetries = require('../controllers/stripe/payment-intent-handlers/payment-retries');
 
 const timezone = process.env.TIMEZONE || 'Europe/London';
 
@@ -112,6 +113,8 @@ let retryDirectDebit = cron.schedule('*/30 * * * *', async () => {
         console.warn(error);
       })
   });
+
+  await directDebitRetries.retryPayments();
 },
   { timezone: timezone }
 );

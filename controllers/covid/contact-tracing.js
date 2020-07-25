@@ -14,7 +14,7 @@ exports.deleteOld = async function () {
   date.second(0);
   date.tz('UTC')
   date = date.format('Y-MM-DD HH:mm:ss');
-  var [results, fields] = await mysql.query("DELERE FROM covidVisitors WHERE `Time` < ?", [
+  var [results, fields] = await mysql.query("DELETE FROM covidVisitors WHERE `Time` < ?", [
     date
   ]);
 }
