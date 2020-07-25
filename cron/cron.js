@@ -10,6 +10,7 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const mysql = require('../common/mysql');
 const squadMoves = require('../controllers/squads/moves');
+const contactTracing = require('../controllers/covid/contact-tracing');
 
 const timezone = process.env.TIMEZONE || 'Europe/London';
 
@@ -121,6 +122,16 @@ let retryDirectDebit = cron.schedule('*/30 * * * *', async () => {
 let handleSquadMoves = cron.schedule('1 * * * *', async () => {
   // console.log('Handle squad moves');
   squadMoves.moveMembers();
+},
+  { timezone: timezone }
+);
+
+/**
+ * Remove covid details
+ */
+let handleContactTracingDeletion = cron.schedule('1 * * * *', async () => {
+  // console.log('Handle squad moves');
+  contactTracing.deleteOld();
 },
   { timezone: timezone }
 );

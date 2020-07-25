@@ -7,6 +7,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var stripeRouter = require('./routes/stripe');
 var gocardlessRouter = require('./routes/gocardless');
+var cronRouter = require('./routes/cron');
 
 const pool = require('./common/mysql');
 pool.createPool();
@@ -25,6 +26,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
+app.use('/cron', cronRouter);
 app.use('/stripe', stripeRouter);
 app.use('/gocardless', gocardlessRouter);
 
