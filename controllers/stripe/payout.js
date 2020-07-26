@@ -13,7 +13,7 @@ exports.handlePayout = async function (org, stripe, payout) {
   if ((payout.status === 'canceled' || payout.status === 'failed') || payout.failure_code) {
     amount = 0;
   }
-  var date = moment.utc(payout.arrival_date);
+  var date = moment.unix(payout.arrival_date);
 
   if (results[0]['COUNT(*)'] > 0) {
     // Update payout item
