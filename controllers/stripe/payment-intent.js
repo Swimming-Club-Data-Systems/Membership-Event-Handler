@@ -212,7 +212,7 @@ exports.handleNewPaymentIntent = async function (org, stripe, payment) {
   );
 
   // Decide if Direct Debit
-  if (payment.payment_method.type && payment.payment_method.type === 'bacs_debit') {
+  if (false && payment.payment_method.type && payment.payment_method.type === 'bacs_debit') {
 
   } else {
 
