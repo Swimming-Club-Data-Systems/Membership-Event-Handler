@@ -290,13 +290,13 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
           message += '<p><strong>Total</strong> <br>&pound;' + escape((new BigNumber(intent.amount)).shiftedBy(-2).decimalPlaces(2).toFormat(2)) + '</p><p><strong>Payment reference</strong> <br>SPM' + databaseId + '</p>';
 
           if (intent.charges.data[0].payment_method_details.card) {
-            message += '<p><strong>Card</strong> <br>' + stripeHelpers.getCardBrand(intent.charges.data[0].payment_method_details.card.brand) + ' ' + intent.charges.data[0].payment_method_details.card.funding + ' card <br>&middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; ' + intent.charges.data[0].payment_method_details.card.last4 + '</p>';
+            message += '<p><strong>Card</strong> <br>' + stripeHelpers.getCardBrand(intent.charges.data[0].payment_method_details.card.brand) + ' ' + escape(intent.charges.data[0].payment_method_details.card.funding) + ' card <br>&middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; ' + escape(intent.charges.data[0].payment_method_details.card.last4) + '</p>';
 
             if (intent.charges.data[0].payment_method_details.card.wallet) {
               message += '<p><strong>Mobile wallet</strong> <br>' + stripeHelpers.getWalletName(intent.charges.data[0].payment_method_details.card.wallet.type) + '</p>';
 
               if (intent.charges.data[0].payment_method_details.card.wallet.dynamic_last4) {
-                message += '<p><strong>Device account number</strong> <br>&middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; ' + htmlspecialchars(intent.charges.data[0].payment_method_details.card.wallet.dynamic_last4) + '</p>';
+                message += '<p><strong>Device account number</strong> <br>&middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; &middot;&middot;&middot;&middot; ' + escape(intent.charges.data[0].payment_method_details.card.wallet.dynamic_last4) + '</p>';
               }
             }
 
