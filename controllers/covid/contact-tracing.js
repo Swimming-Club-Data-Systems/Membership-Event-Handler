@@ -4,6 +4,7 @@
 
 const mysql = require('../../common/mysql');
 const moment = require('moment-timezone');
+const socketModule = require('../../socket.io/socket-io');
 
 exports.deleteOld = async function () {
   // Get pending squad moves
@@ -38,4 +39,26 @@ exports.webEndpoint = async function (req, res, next) {
       status: 500,
     });
   }
+}
+
+/**
+ * Creates a new story, uploads it and loads the story list again
+ * @param req http request
+ * @param res http response
+ */
+exports.signOutChangeEvent = function (req, res) {
+
+  console.log(req.body);
+
+  try {
+    req.app.io.sockets.to(req.body.room).emit('tick-event', {
+      event: 'covid-sign-out-change',
+      field: req.body.field,
+      state: req.body.state,
+    });
+  } catch (err) {
+    console.warn(err);
+  }
+
+  res.end();
 }

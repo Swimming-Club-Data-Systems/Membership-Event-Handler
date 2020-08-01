@@ -8,6 +8,7 @@ var indexRouter = require('./routes/index');
 var stripeRouter = require('./routes/stripe');
 var gocardlessRouter = require('./routes/gocardless');
 var cronRouter = require('./routes/cron');
+var covidRouter = require('./routes/covid');
 
 const pool = require('./common/mysql');
 pool.createPool();
@@ -20,6 +21,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(logger('dev'));
+app.use(express.json());
 app.use(express.text({type: '*/*'}));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -29,6 +31,7 @@ app.use('/', indexRouter);
 app.use('/cron', cronRouter);
 app.use('/stripe', stripeRouter);
 app.use('/gocardless', gocardlessRouter);
+app.use('/covid', covidRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -28,6 +28,17 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
+ * socket.io
+ */
+app.io = require('socket.io').listen(server,
+  // options: set pingTimeoutto a default greater than 5000
+  // https://github.com/socketio/socket.io/issues/3259
+  // a default of 5000 makes disconnection very frequent
+  { pingTimeout: 60000 });
+var socket_module = require('../socket.io/socket-io');
+socket_module.init(app.io, app);
+
+/**
  * Listen on provided port, on all network interfaces.
  */
 

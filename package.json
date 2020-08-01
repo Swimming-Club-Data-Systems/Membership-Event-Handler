@@ -25,7 +25,12 @@
     "mysql": "^2.18.1",
     "mysql2": "^2.1.0",
     "node-cron": "^2.0.3",
+    "socket.io": "^2.3.0",
     "stripe": "^8.56.0",
     "uuid": "^8.1.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.1",
+    "utf-8-validate": "^5.0.2"
   }
 }
