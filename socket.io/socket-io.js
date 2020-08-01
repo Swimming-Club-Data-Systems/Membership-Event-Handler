@@ -7,11 +7,7 @@ exports.init = function (io, app) {
 
       socket.on('covid-join-room', function (message) {
         try {
-          console.log(message.room);
-          // message = JSON.parse(message);
           socket.join('covid_room:' + message.room);
-
-          console.log('covid_room:' + message.room);
 
           io.to('covid_room:' + message.room).emit('covid-test', {
             status: true,

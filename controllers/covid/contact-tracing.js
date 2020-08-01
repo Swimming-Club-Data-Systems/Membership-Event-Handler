@@ -47,9 +47,6 @@ exports.webEndpoint = async function (req, res, next) {
  * @param res http response
  */
 exports.signOutChangeEvent = function (req, res) {
-
-  console.log(req.body);
-
   try {
     req.app.io.sockets.to(req.body.room).emit('tick-event', {
       event: 'covid-sign-out-change',
@@ -57,8 +54,7 @@ exports.signOutChangeEvent = function (req, res) {
       state: req.body.state,
     });
   } catch (err) {
-    console.warn(err);
+    console.error(err);
   }
-
   res.end();
 }
