@@ -24,10 +24,15 @@ exports.webhookHandler = async function (req, res, next) {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
-    response.status(400).send(`Webhook Error: ${err.message}`);
+    res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
+
+    if (!event) {
+      throw new Error();
+    }
+
     const org = await Organisation.fromStripeAccount(event.account);
 
     // Do if event has same mode as system

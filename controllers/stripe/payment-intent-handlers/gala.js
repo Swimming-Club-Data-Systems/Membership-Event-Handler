@@ -61,6 +61,11 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
     if (intent.charges.data[0].balance_transaction) {
       // Handle stripe balance transaction for fees
       // CALL A METHOD
+      let fee = intent.charges.data[0].balance_transaction.fee;
+      [results, fields] = await mysql.query("UPDATE `stripePayments` SET `Fees` = ? WHERE `Intent` = ?;", [
+        fee,
+        intent.id,
+      ]);
     }
 
     // Get the user

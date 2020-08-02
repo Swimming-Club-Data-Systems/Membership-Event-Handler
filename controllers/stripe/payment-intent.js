@@ -14,16 +14,27 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
 
   var intent = await stripe.paymentIntents.retrieve(
     payment.id, {
-    expand: ['customer', 'payment_method'],
+    expand: ['customer', 'payment_method', 'charges.data.balance_transaction'],
   },
     {
       stripeAccount: org.getStripeAccount()
     }
   );
-  // console.log(payment);
 
   // Decide if Direct Debit
   if (intent.payment_method.type === 'bacs_debit') {
+
+    // Set fees if possible
+    let fee = 0;
+    if (intent.charges.data[0].balance_transaction) {
+      // Handle stripe balance transaction for fees
+      let fee = intent.charges.data[0].balance_transaction.fee;
+      // [results, fields] = await mysql.query("UPDATE `stripePayments` SET `Fees` = ? WHERE `Intent` = ?;", [
+      //   fee,
+      //   intent.id,
+      // ]);
+    }
+
     // Handle direct debit payment
     [results, fields] = await mysql.query("UPDATE `payments` SET `Status` = ? WHERE `stripePaymentIntent` = ?", [
       intent.status,
