@@ -36,8 +36,9 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
     }
 
     // Handle direct debit payment
-    [results, fields] = await mysql.query("UPDATE `payments` SET `Status` = ? WHERE `stripePaymentIntent` = ?", [
+    [results, fields] = await mysql.query("UPDATE `payments` SET `Status` = ?, `stripeFee` = ? WHERE `stripePaymentIntent` = ?", [
       intent.status,
+      fee,
       intent.id,
     ]);
 
