@@ -9,6 +9,7 @@ const paymentMethods = require('./payment-method');
 const paymentIntents = require('./payment-intent');
 const checkoutSessions = require('./checkout-sessions');
 const mandates = require('./mandate');
+const disputes = require('./dispute');
 
 const process = require('process');
 
@@ -19,7 +20,7 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 exports.webhookHandler = async function (req, res, next) {
   const sig = req.get('stripe-signature');
   let event;
-  var paymentMethod, paymentIntent, payout, checkoutSession;
+  var paymentMethod, paymentIntent, payout, checkoutSession, dispute;
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
@@ -89,6 +90,26 @@ exports.webhookHandler = async function (req, res, next) {
         case 'mandate.updated':
           mandate = event.data.object;
           mandates.handleUpdated(org, stripe, mandate);
+          break;
+        case 'charge.dispute.created':
+          dispute = event.data.object;
+          disputes.handleCreated(org, stripe, dispute);
+          break;
+        case 'charge.dispute.updates':
+          dispute = event.data.object;
+          disputes.handleUpdated(org, stripe, dispute);
+          break;
+        case 'charge.dispute.closed':
+          dispute = event.data.object;
+          disputes.handleClosed(org, stripe, dispute);
+          break;
+        case 'charge.dispute.funds_withdrawn':
+          dispute = event.data.object;
+          disputes.handleFundsWithdrawn(org, stripe, dispute);
+          break;
+        case 'charge.dispute.funds_reinstated':
+          dispute = event.data.object;
+          disputes.handleFundsReinstated(org, stripe, dispute);
           break;
         default:
           // Unexpected event type
