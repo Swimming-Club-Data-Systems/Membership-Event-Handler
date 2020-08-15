@@ -116,7 +116,7 @@ exports.webhookHandler = async function (req, res, next) {
           return res.status(400).end();
       }
     } else {
-      return res.status(400).end();
+      return res.status(200).end();
     }
 
     // Return a response to acknowledge receipt of the event
