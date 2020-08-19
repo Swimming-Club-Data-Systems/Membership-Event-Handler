@@ -9,6 +9,7 @@ var stripeRouter = require('./routes/stripe');
 var gocardlessRouter = require('./routes/gocardless');
 var cronRouter = require('./routes/cron');
 var covidRouter = require('./routes/covid');
+var attendanceRouter = require('./routes/attendance');
 
 const pool = require('./common/mysql');
 pool.createPool();
@@ -32,6 +33,7 @@ app.use('/cron', cronRouter);
 app.use('/stripe', stripeRouter);
 app.use('/gocardless', gocardlessRouter);
 app.use('/covid', covidRouter);
+app.use('/attendance', attendanceRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -17,6 +17,18 @@ exports.init = function (io, app) {
         }
       });
 
+      socket.on('register-join-room', function (message) {
+        try {
+          socket.join(message.room);
+
+          io.to(message.room).emit('register-test', {
+            status: true,
+          });
+        } catch (error) {
+          console.warn(error);
+        }
+      });
+
       socket.on('acuityClick', function (id) {
         socket.broadcast.emit('acuityClick', id);
       });
