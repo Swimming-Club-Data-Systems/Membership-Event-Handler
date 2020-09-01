@@ -146,15 +146,12 @@ let sumPayments = cron.schedule('0 3 1 * *', async () => {
   // console.log('Handle summing payments at 3 am on first day of month');
   const sites = await getSites();
 
-  sites.forEach(site => {
-    axios.get(site.url + 'webhooks/sumpayments')
-      .then(function (response) {
-        // handle success
-      })
-      .catch(function (error) {
-        // handle error
-        console.warn(error);
-      })
+  sites.forEach(async site => {
+    try {
+      await axios.get(site.url + 'webhooks/sumpayments');
+    } catch (error) {
+      console.warn(error);
+    }
   });
 },
   { timezone: timezone }
