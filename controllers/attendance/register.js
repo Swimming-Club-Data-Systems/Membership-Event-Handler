@@ -13,7 +13,7 @@ const socketModule = require('../../socket.io/socket-io');
  */
 exports.handleStateChange = function (req, res) {
   let json = JSON.parse(req.body);
-  console.log(json.room);
+  // console.log(json.room);
   try {
     req.app.io.sockets.to(json.room).emit('register-tick-event', {
       event: 'register-item-state-change',
