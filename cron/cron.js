@@ -9,6 +9,7 @@ const axios = require('axios').default;
 const dotenv = require('dotenv');
 const fs = require('fs');
 const mysql = require('../common/mysql');
+const attendanceRegisters = require('../controllers/attendance/register');
 const squadMoves = require('../controllers/squads/moves');
 const contactTracing = require('../controllers/covid/contact-tracing');
 const directDebitRetries = require('../controllers/stripe/payment-intent-handlers/payment-retries');
@@ -153,6 +154,18 @@ let sumPayments = cron.schedule('0 3 1 * *', async () => {
       console.warn(error);
     }
   });
+},
+  { timezone: timezone }
+);
+
+/**
+ * Handle register generation for sessions needing booking
+ */
+let prebookedRegisterHandler = cron.schedule('* * * * *', async () => {
+  // console.log('Checking for upcoming pre-booked sessions to generate registers');
+
+  await attendanceRegisters.handlePreBookedRegisterGeneration();
+
 },
   { timezone: timezone }
 );
