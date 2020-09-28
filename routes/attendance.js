@@ -10,5 +10,6 @@ const register = require('../controllers/attendance/register');
  * Handle events
  */
 router.post('/send-register-change-message', register.handleStateChange);
+router.post('/send-booking-page-change-message', register.handleBookingUpdate);
 
 module.exports = router;

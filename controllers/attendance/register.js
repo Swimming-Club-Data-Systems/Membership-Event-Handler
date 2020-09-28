@@ -26,6 +26,25 @@ exports.handleStateChange = function (req, res) {
   res.end();
 }
 
+/**
+ * Handles and triggers register state change event
+ * @param req http request
+ * @param res http response
+ */
+exports.handleBookingUpdate = function (req, res) {
+  let json = JSON.parse(req.body);
+  // console.log(json.room);
+  try {
+    req.app.io.sockets.to(json.room).emit('booking-page-book-cancel-event', {
+      event: 'booking-page-book-cancel',
+      update: json.update,
+    });
+  } catch (err) {
+    console.error(err);
+  }
+  res.end();
+}
+
 exports.getWeekId = async function (tenant, dateString = undefined) {
 
   var date = moment.tz(dateString, 'Europe/London');
