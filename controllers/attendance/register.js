@@ -79,7 +79,7 @@ exports.handlePreBookedRegisterGeneration = async function () {
   var date = moment.tz('Europe/London').add(15, 'minutes');
   var dateString = date.format('Y-MM-DD');
   var timeString = date.format('HH:mm');
-  var [results, fields] = await mysql.query("SELECT `sessionsBookable`.`Session`, `sessionsBookable`.`Date`, `sessions`.`Tenant` FROM `sessionsBookable` INNER JOIN `sessions` ON `sessionsBookable`.`Session` = `sessions`.`SessionID` WHERE `sessionsBookable`.`Date` = ? AND `sessions`.`StartTime` <= ? AND NOT `RegisterGenerated`", [
+  var [results, fields] = await mysql.query("SELECT `sessionsBookable`.`Session`, `sessionsBookable`.`Date`, `sessions`.`Tenant`, `sessionsBookable`.`BookingFee` FROM `sessionsBookable` INNER JOIN `sessions` ON `sessionsBookable`.`Session` = `sessions`.`SessionID` WHERE `sessionsBookable`.`Date` = ? AND `sessions`.`StartTime` <= ? AND NOT `RegisterGenerated`", [
     dateString,
     timeString,
   ]);
@@ -98,7 +98,7 @@ exports.handlePreBookedRegisterGeneration = async function () {
 
       // Get member bookings - only where member is currently active
       // This means we don't add recently deleted members to the register
-      var [bookings, fields] = await mysql.query("SELECT `sessionsBookings`.`Member` FROM `sessionsBookings` INNER JOIN `members` ON `sessionsBookings`.`Member` = `members`.`MemberID` WHERE `sessionsBookings`.`Session` = ? AND `sessionsBookings`.`Date` = ? AND `members`.`Tenant` = ? AND `members`.`Active`", [
+      var [bookings, fields] = await conn.query("SELECT `sessionsBookings`.`Member`, `members`.`UserID`, `members`.`MForename`, `members`.`MSurname` FROM `sessionsBookings` INNER JOIN `members` ON `sessionsBookings`.`Member` = `members`.`MemberID` WHERE `sessionsBookings`.`Session` = ? AND `sessionsBookings`.`Date` = ? AND `members`.`Tenant` = ? AND `members`.`Active`", [
         bookableSession['Session'],
         bookableSession['Date'],
         bookableSession['Tenant'],
@@ -111,7 +111,7 @@ exports.handlePreBookedRegisterGeneration = async function () {
       for (let y = 0; y < bookings.length; y++) {
         const member = bookings[y];
 
-        var [addRecordResult, fields] = await mysql.query("INSERT INTO `sessionsAttendance` (`WeekID`, `SessionID`, `MemberID`, `AttendanceBoolean`, `AttendanceRequired`) VALUES (?, ?, ?, ?, ?)", [
+        var [addRecordResult, fields] = await conn.query("INSERT INTO `sessionsAttendance` (`WeekID`, `SessionID`, `MemberID`, `AttendanceBoolean`, `AttendanceRequired`) VALUES (?, ?, ?, ?, ?)", [
           weekId,
           bookableSession['Session'],
           member['Member'],
@@ -119,10 +119,23 @@ exports.handlePreBookedRegisterGeneration = async function () {
           1,
         ]);
 
+        // If has fee gt 0, add payment item
+        if (bookableSession['BookingFee'] > 0) {
+          var [addRecordResult, fields] = await conn.query("INSERT INTO `paymentsPending` (`Date`, `Status`, `UserID`, `Name`, `Amount`, `Currency`, `Type`) VALUES (?, ?, ?, ?, ?, ?, ?)", [
+            bookableSession['Date'],
+            'Pending',
+            member['UserID'],
+            member['MForename'] + ' ' + member['MSurname'] + ' - ' + dateString + '-S' + bookableSession['Session'] + ' (Pay as you go)',
+            bookableSession['BookingFee'],
+            'GBP',
+            'Payment'
+          ]);
+        }
+
       }
 
       // Mark as register generated
-      var [addRecordResult, fields] = await mysql.query("UPDATE `sessionsBookable` SET `RegisterGenerated` = ? WHERE `Session` = ? AND `Date` = ?", [
+      var [addRecordResult, fields] = await conn.query("UPDATE `sessionsBookable` SET `RegisterGenerated` = ? WHERE `Session` = ? AND `Date` = ?", [
         1,
         bookableSession['Session'],
         bookableSession['Date'],
@@ -134,7 +147,7 @@ exports.handlePreBookedRegisterGeneration = async function () {
 
       // If an error occurred, roll back
       await conn.rollback();
-      // console.error(error);
+      console.error(error);
 
     }
 
