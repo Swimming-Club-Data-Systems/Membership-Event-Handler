@@ -77,6 +77,27 @@ let chargeUsers = cron.schedule('* * * * *', async () => {
 );
 
 /**
+ * Do legacy renwal system populating
+ */
+let legacyRenewalGenerator = cron.schedule('0 5 * * *', async () => {
+  // console.log('Do legacy renwal system populating every day at 0500');
+  const sites = await getSites();
+
+  sites.forEach(site => {
+    axios.get(site.url + 'webhooks/handle-legacy-renewal-period-creation')
+      .then(function (response) {
+        // handle success
+      })
+      .catch(function (error) {
+        // handle error
+        console.warn(error);
+      })
+  });
+},
+  { timezone: timezone }
+);
+
+/**
  * Update register weeks at the start of each attendance week
  */
 let updateRegisterWeeks = cron.schedule('1 0 * * 0', async () => {
