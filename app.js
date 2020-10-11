@@ -24,7 +24,7 @@ app.set('view engine', 'ejs');
 
 app.use(logger('dev'));
 // app.use(express.json());
-// app.use(express.text({type: '*/*'}));
+app.use(express.text({type: '*/*'}));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -48,7 +48,7 @@ app.use('/stripe', stripeRouter);
 app.use('/gocardless', gocardlessRouter);
 app.use('/covid', covidRouter);
 app.use('/attendance', attendanceRouter);
-app.use('/sendgrid', sendgridRouter);
+// app.use('/sendgrid', sendgridRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
