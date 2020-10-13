@@ -51,7 +51,7 @@ exports.retryPayments = async function () {
     }
 
     // Mark retry attempt as done
-    [results, fields] = await mysql.query("UPDATE `paymentRetries` SET `Tried` = ?, `stripeFailureCode` = NULL WHERE `PMKey` = ?", [
+    [results, fields] = await mysql.query("UPDATE `paymentRetries` SET `Tried` = ? WHERE `PMKey` = ?", [
       true,
       retryDetails['PMKey'],
     ]);
