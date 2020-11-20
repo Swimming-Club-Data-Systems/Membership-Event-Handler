@@ -4,6 +4,7 @@
 
 const mysql = require('../../common/mysql');
 const galas = require('./payment-intent-handlers/gala');
+const renewals = require('./payment-intent-handlers/renewal');
 const moment = require('moment-timezone');
 const BigNumber = require('bignumber.js');
 const escape = require('escape-html');
@@ -72,9 +73,20 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
       databaseId
     ]);
 
-    if (results[0]['COUNT(*)'] > 0) {
+    let galaCount = results[0]['COUNT(*)'];
+
+    [results, fields] = await mysql.query("SELECT COUNT(*) FROM renewalMembers WHERE StripePayment = ?", [
+      databaseId
+    ]);
+
+    let regRenCount = results[0]['COUNT(*)'];
+
+    if (galaCount > 0) {
       // This payment was for galas so run the code for a successful gala payment
       galas.paymentIntentHandler(org, stripe, intent);
+    } else if (regRenCount > 0) {
+      // Payment is for registration or renewal so run that code
+      renewals.paymentIntentHandler(org, stripe, intent);
     } else {
       // Run code for any other type of payment
       // Such types do not exist yet but this is passive provision
