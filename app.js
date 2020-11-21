@@ -6,6 +6,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var stripeRouter = require('./routes/stripe');
+var stripeInternalRouter = require('./routes/stripe-scds');
 var gocardlessRouter = require('./routes/gocardless');
 var cronRouter = require('./routes/cron');
 var covidRouter = require('./routes/covid');
@@ -22,7 +23,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-app.use(logger('dev'));
+app.use(logger('dev'))
 // app.use(express.json());
 app.use(express.text({type: '*/*'}));
 app.use(express.urlencoded({ extended: false }));
@@ -45,6 +46,7 @@ app.use(expressCspHeader({
 app.use('/', indexRouter);
 app.use('/cron', cronRouter);
 app.use('/stripe', stripeRouter);
+app.use('/stripe-scds', stripeInternalRouter);
 app.use('/gocardless', gocardlessRouter);
 app.use('/covid', covidRouter);
 app.use('/attendance', attendanceRouter);
