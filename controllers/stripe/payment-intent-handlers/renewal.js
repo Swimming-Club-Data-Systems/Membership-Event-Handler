@@ -9,6 +9,7 @@ const escape = require('escape-html');
 const Email = require('../../email/email');
 const stripeHelpers = require('../helpers');
 const { Connection } = require("mysql2");
+const { length } = require("mysql2/lib/constants/charset_encodings");
 
 exports.paymentIntentHandler = async function (org, stripe, intent) {
   try {
@@ -38,16 +39,9 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
       ]);
     }
 
-    // Get the user
-    [results, fields] = await mysql.query("SELECT `User` FROM stripePayments WHERE Intent = ?", [
-      intent.id
-    ]);
-
-    if (results.length == 0) {
-      return;
-    }
-
-    var userId = results[0].User;
+    // Get renewal info
+    let renewalId = intent.metadata.renewal_id;
+    let userId = intent.metadata.user_id;
 
     if (intent.charges.data[0].payment_method_details.card.wallet != null) {
       reuse = false;
@@ -210,6 +204,52 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
         // Set the date to now
         var date = moment.utc();
 
+        [results, fields] = await conn.query("UPDATE `renewalProgress` SET `Stage` = 6, `Substage` = 0 WHERE `RenewalID` = ? AND `UserID` = ? AND `Stage` < 6", [
+          renewalId,
+          userId,
+        ]);
+
+        if (renewalId != 0) {
+          // Get members for this user
+          [results, fields] = await conn.query("SELECT renewalMembers.ID FROM renewalMembers INNER JOIN members ON members.MemberID = renewalMembers.MemberID WHERE members.UserID = ? AND renewalMembers.RenewalID = ?", [
+            userId,
+            renewalId,
+          ]);
+
+          let renewalMembers = results;
+
+          for (let i = 0; i < renewalMembers.length; i++) {
+            let id = renewalMembers[i]['ID'];
+            [results, fields] = await conn.query("UPDATE renewalMembers SET PaymentID = ?, `Date` = ?, CountRenewal = ?, Renewed = ? WHERE ID = ?", [
+              null,
+              date.format("Y-MM-DD HH:mm:ss"),
+              true,
+              true,
+              id,
+            ]);
+          }
+        }
+
+        // If user needs registration
+        [results, fields] = await conn.query("SELECT `RR` FROM `users` WHERE `UserID` = ?", [
+          userId,
+        ]);
+        if (results.length > 0 && results[0]['RR']) {
+          [results, fields] = await conn.query("UPDATE `users` SET `RR` = 0 WHERE `UserID` = ?", [
+            userId,
+          ]);
+
+          [results, fields] = await conn.query("UPDATE `members` SET `RR` = 0, `RRTransfer` = 0 WHERE `UserID` = ?", [
+            userId,
+          ]);
+
+          // Remove from status tracker
+          [results, fields] = await conn.query("DELETE FROM renewalProgress WHERE UserID = ? AND RenewalID = ?", [
+            userId,
+            0,
+          ]);
+        }
+
         try {
           // Add to stripe payments
           [results, fields] = await conn.query("UPDATE stripePayments SET Method = ?, Amount = ?, Currency = ?, Paid = ?, AmountRefunded = ?, `DateTime` = ? WHERE Intent = ?", [
@@ -282,6 +322,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
 
           }
 
+          message += '<p>Thank you for renewing your membership with ' + escape(org.getName()) + '.</p>';
           message += '<p>In accordance with card network rules, refunds will only be made to the payment card which was used.</p>';
 
           var email, name;

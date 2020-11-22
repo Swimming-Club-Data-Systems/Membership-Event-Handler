@@ -23,7 +23,7 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
   );
 
   // Decide if Direct Debit
-  if (intent.payment_method.type === 'bacs_debit') {
+  if (intent.metadata.payment_category && intent.metadata.payment_category === 'monthly_fee') {
 
     // Set fees if possible
     let fee = 0;
@@ -54,43 +54,34 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
       'Paid',
       intent.id,
     ]);
-  } else {
+  } else if (intent.metadata.payment_category && intent.metadata.payment_category === 'gala_entry') {
 
-    // Check if there are gala entries for this payment intent
-    [results, fields] = await mysql.query("SELECT ID FROM stripePayments WHERE Intent = ?", [
-      intent.id
-    ]);
+    // // Check if there are gala entries for this payment intent
+    // [results, fields] = await mysql.query("SELECT ID FROM stripePayments WHERE Intent = ?", [
+    //   intent.id
+    // ]);
 
-    if (results.length == 0) {
-      return;
-    }
+    // if (results.length == 0) {
+    //   return;
+    // }
 
-    var databaseId = results[0].ID;
+    // var databaseId = results[0].ID;
 
-    // Get gala count
-    // Check if there are gala entries for this payment intent
-    [results, fields] = await mysql.query("SELECT COUNT(*) FROM galaEntries WHERE StripePayment = ?", [
-      databaseId
-    ]);
+    // // Get gala count
+    // // Check if there are gala entries for this payment intent
+    // [results, fields] = await mysql.query("SELECT COUNT(*) FROM galaEntries WHERE StripePayment = ?", [
+    //   databaseId
+    // ]);
 
-    let galaCount = results[0]['COUNT(*)'];
+    // let galaCount = results[0]['COUNT(*)'];
 
-    [results, fields] = await mysql.query("SELECT COUNT(*) FROM renewalMembers WHERE StripePayment = ?", [
-      databaseId
-    ]);
-
-    let regRenCount = results[0]['COUNT(*)'];
-
-    if (galaCount > 0) {
-      // This payment was for galas so run the code for a successful gala payment
-      galas.paymentIntentHandler(org, stripe, intent);
-    } else if (regRenCount > 0) {
-      // Payment is for registration or renewal so run that code
-      renewals.paymentIntentHandler(org, stripe, intent);
-    } else {
-      // Run code for any other type of payment
-      // Such types do not exist yet but this is passive provision
-    }
+    // if (galaCount > 0) {
+    //   // This payment was for galas so run the code for a successful gala payment
+    //   galas.paymentIntentHandler(org, stripe, intent);
+    // }
+    galas.paymentIntentHandler(org, stripe, intent);
+  } else if (intent.metadata.payment_category && intent.metadata.payment_category === 'renewal') {
+    renewals.paymentIntentHandler(org, stripe, intent);
   }
 }
 
