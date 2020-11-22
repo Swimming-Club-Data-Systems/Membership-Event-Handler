@@ -212,5 +212,39 @@ module.exports = class Organisation {
     return 'noreply@myswimmingclub.uk';
   }
 
+  async setKey(key, value) {
+    if (value == "") {
+      value = null;
+    }
+
+    if (key in this.keys) {
+      this.keys[key] = value;
+    }
+
+    var [results, fields] = await mysql.query("SELECT COUNT(*) FROM tenantOptions WHERE `Option` = ? AND `Tenant` = ?", [
+      key,
+      this.id
+    ]);
+
+    if (results[0]['COUNT(*)'] > 0 && value === null) {
+      var [results, fields] = await mysql.query("DELETE FROM tenantOptions WHERE `Option` = ? AND `Tenant` = ?", [
+        key,
+        this.id
+      ]);
+    } else if (results[0]['COUNT(*)'] == 0 && value !== null) {
+      var [results, fields] = await mysql.query("INSERT INTO tenantOptions (`Option`, `Value`, `Tenant`) VALUES (?, ?, ?)", [
+        key,
+        value,
+        this.id
+      ]);
+    } else if (results[0]['COUNT(*)'] > 0) {
+      var [results, fields] = await mysql.query("UPDATE tenantOptions SET `Value` = ? WHERE `Option` = ? AND `Tenant` = ?", [
+        value,
+        key,
+        this.id
+      ]);
+    }
+  }
+
   
 }

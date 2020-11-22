@@ -7,8 +7,8 @@ const mysql = require('../../common/mysql');
 // const payouts = require('./payout');
 // const paymentMethods = require('./payment-method');
 // const paymentIntents = require('./payment-intent');
-// const checkoutSessions = require('./checkout-sessions');
-// const mandates = require('./mandate');
+const checkoutSessions = require('./checkout-sessions');
+const mandates = require('./mandate');
 // const disputes = require('./dispute');
 
 const process = require('process');
@@ -18,7 +18,6 @@ const endpointSecret = process.env.STRIPE_SCDS_WEBHOOK_SECRET;
 
 
 exports.webhookHandler = async function (req, res, next) {
-  console.info(endpointSecret);
   const sig = req.get('stripe-signature');
   let event;
   var paymentMethod, paymentIntent, payout, checkoutSession, dispute;
@@ -38,8 +37,15 @@ exports.webhookHandler = async function (req, res, next) {
     // Do if event has same mode as system
     // Handle the event
     switch (event.type) {
+      case 'checkout.session.completed':
+        checkoutSession = event.data.object;
+        checkoutSessions.handleCompleted(stripe, checkoutSession);
+        break;
+      case 'mandate.updated':
+        mandate = event.data.object;
+        mandates.handleUpdated(stripe, mandate);
+        break;
       case 'account.updated':
-        console.log(event);
         break;
       default:
         // Unexpected event type
