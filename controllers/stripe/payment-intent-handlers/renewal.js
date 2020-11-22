@@ -40,8 +40,8 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
     }
 
     // Get renewal info
-    let renewalId = intent.metadata.renewal_id;
-    let userId = intent.metadata.user_id;
+    let renewalId = parseInt(intent.metadata.renewal_id);
+    let userId = parseInt(intent.metadata.user_id);
 
     if (intent.charges.data[0].payment_method_details.card.wallet != null) {
       reuse = false;
