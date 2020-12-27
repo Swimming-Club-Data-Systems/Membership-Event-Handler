@@ -36,6 +36,8 @@ exports.handleCompleted = async function (stripe, cs) {
         intent.mandate.type,
         intent.mandate[intent.mandate.type]
       ]);
+    } else {
+      console.log('NOT IT');
     }
   }
 }
