@@ -13,28 +13,28 @@ exports.handleCompleted = async function (stripe, cs) {
     });
 
     if (intent.payment_method && intent.payment_method.type == 'bacs_debit') {
-      let status = intent.mandate.status === 'active';
-      let json = {
-        fingerprint: intent.payment_method.bacs_debit.fingerprint,
-        last4: intent.payment_method.bacs_debit.last4,
-        sort_code: intent.payment_method.bacs_debit.sort_code,
-        address: intent.payment_method.billing_details.address,
-        network_status: intent.mandate.payment_method_details.bacs_debit.network_status,
-        status: intent.mandate.status,
-        reference: intent.mandate.payment_method_details.bacs_debit.reference,
-        url: intent.mandate.payment_method_details.bacs_debit.url,
-      }
-
       // Add the new PM to the DB
-      var [results, fields] = await mysql.query("INSERT INTO `tenantPaymentMethods` (`ID`, `Customer`, `MethodID`, `MandateID`, `Fingerprint`, `Type`, `JSON`, `Usable`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
+      var [results, fields] = await mysql.query("INSERT INTO `tenantPaymentMethods` (`ID`, `MethodID`, `Customer`, `BillingDetails`, `Type`, `TypeData`, `Fingerprint`, `Usable`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
         uuidv4(),
-        intent.customer,
         intent.payment_method.id,
+        intent.customer,
+        JSON.stringify(intent.payment_method.billing_details),
+        intent.payment_method.type,
+        intent.payment_method[intent.payment_method.type],
+        intent.payment_method[intent.payment_method.type].fingerprint,
+        true
+      ]);
+
+      // Add the mandate info to the DB
+      var [results, fields] = await mysql.query("INSERT INTO `tenantPaymentMandates` (`ID`, `MandateID`, `AcceptanceData`, `PaymentMethod`, `MethodDetails`, `Status`, `UsageType`, `UsageData`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
+        uuidv4(),
         intent.mandate.id,
-        intent.payment_method.bacs_debit.fingerprint,
-        'bacs_debit',
-        JSON.stringify(json),
-        status
+        JSON.stringify(intent.mandate.customer_acceptance),
+        intent.payment_method.id,
+        JSON.stringify(intent.mandate.payment_method_details),
+        intent.mandate.status,
+        intent.mandate.type,
+        intent.mandate[intent.mandate.type]
       ]);
     }
   }

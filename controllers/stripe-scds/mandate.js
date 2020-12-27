@@ -8,35 +8,38 @@ const Organisation = require('../organisation');
 
 exports.handleUpdated = async function (stripe, mandate) {
   // Handle mandate update
-  if (mandate.payment_method_details.bacs_debit) {
 
-    var [results, fields] = await mysql.query("SELECT `tenantPaymentMethods`.`ID`, `JSON`, `Tenant` FROM `tenantPaymentMethods` INNER JOIN `tenantStripeCustomers` ON `tenantPaymentMethods`.`Customer` = `tenantStripeCustomers`.`CustomerID` WHERE `MethodID` = ?", [
-      mandate.payment_method,
+  var [results, fields] = await mysql.query("SELECT `ID` FROM `tenantPaymentMethods` WHERE `MethodID` = ?", [
+    mandate.payment_method.id,
+  ]);
+
+  if (results.length > 0) {
+
+    let mandateId = results[0]['ID'];
+
+    var [results, fields] = await mysql.query("UPDATE `tenantPaymentMethods` SET `BillingDetails` = ?, `Type` = ? `TypeData` = ? WHERE `MethodID` = ?", [
+      JSON.stringify(mandate.payment_method.billing_details),
+      mandate.payment_method.type,
+      mandate.payment_method[intent.payment_method.type],
+      mandate.payment_method.id,
     ]);
 
-    if (results.length > 0) {
-      let json = JSON.parse(results[0]['JSON']);
-      let tenant = results[0]['Tenant'];
-      let mandateId = results[0]['ID'];
-      json.network_status = mandate.payment_method_details.bacs_debit.network_status;
-      json.status = mandate.status;
-      let status = mandate.status === 'active';
+    var [results, fields] = await mysql.query("UPDATE `tenantPaymentMandates` SET `AcceptanceData` = ?, `MethodDetails` = ? `Status` = ?, `UsageType` = ?, `UsageData` = ? WHERE `PaymentMethod` = ?", [
+      JSON.stringify(mandate.customer_acceptance),
+      JSON.stringify(mandate.payment_method_details),
+      mandate.status,
+      mandate.payment_method.id,
+    ]);
 
-      let org = await Organisation.fromId(tenant);
+    let org = await Organisation.fromId(tenant);
 
-      if (!status && org.getKey('DEFAULT_PAYMENT_MANDATE') === mandateId) {
-        // Delete the old one
-        await org.setKey('DEFAULT_PAYMENT_MANDATE', null);
-      } else if (status && org.getKey('DEFAULT_PAYMENT_MANDATE') == null) {
-        // Set new one
-        await org.setKey('DEFAULT_PAYMENT_MANDATE', mandateId);
-      }
-
-      await mysql.query("UPDATE `tenantPaymentMethods` SET `Usable` = ?, `JSON` = ? WHERE `MethodID` = ?", [
-        status,
-        JSON.stringify(json),
-        mandate.payment_method,
-      ]);
+    if (mandate.status !== 'active' && org.getKey('DEFAULT_PAYMENT_MANDATE') === mandateId) {
+      // Delete the old one
+      await org.setKey('DEFAULT_PAYMENT_MANDATE', null);
+    } else if (mandate.status === 'active' && org.getKey('DEFAULT_PAYMENT_MANDATE') == null) {
+      // Set new one
+      await org.setKey('DEFAULT_PAYMENT_MANDATE', mandateId);
     }
+
   }
 }
