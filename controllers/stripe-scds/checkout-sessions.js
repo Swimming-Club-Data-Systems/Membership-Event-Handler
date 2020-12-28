@@ -20,7 +20,7 @@ exports.handleCompleted = async function (stripe, cs) {
         intent.customer,
         JSON.stringify(intent.payment_method.billing_details),
         intent.payment_method.type,
-        intent.payment_method[intent.payment_method.type],
+        JSON.stringify(intent.payment_method[intent.payment_method.type]),
         intent.payment_method[intent.payment_method.type].fingerprint,
         true
       ]);
@@ -34,10 +34,8 @@ exports.handleCompleted = async function (stripe, cs) {
         JSON.stringify(intent.mandate.payment_method_details),
         intent.mandate.status,
         intent.mandate.type,
-        intent.mandate[intent.mandate.type]
+        JSON.stringify(intent.mandate[intent.mandate.type])
       ]);
-    } else {
-      console.log('NOT IT');
     }
   }
 }

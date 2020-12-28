@@ -9,6 +9,7 @@ const mysql = require('../../common/mysql');
 // const paymentIntents = require('./payment-intent');
 const checkoutSessions = require('./checkout-sessions');
 const mandates = require('./mandate');
+const setupIntents = require('./setup-intent');
 // const disputes = require('./dispute');
 
 const process = require('process');
@@ -20,7 +21,7 @@ const endpointSecret = process.env.STRIPE_SCDS_WEBHOOK_SECRET;
 exports.webhookHandler = async function (req, res, next) {
   const sig = req.get('stripe-signature');
   let event;
-  var paymentMethod, paymentIntent, payout, checkoutSession, dispute;
+  var paymentMethod, paymentIntent, payout, checkoutSession, dispute, setupIntent;
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
@@ -46,6 +47,26 @@ exports.webhookHandler = async function (req, res, next) {
         mandates.handleUpdated(stripe, mandate);
         break;
       case 'account.updated':
+        break;
+      case 'setup_intent.canceled':
+        setupIntent = event.data.object;
+        setupIntents.handleCanceled(stripe, setupIntent);
+        break;
+      case 'setup_intent.created':
+        setupIntent = event.data.object;
+        setupIntents.handleCreated(stripe, setupIntent);
+        break;
+      case 'setup_intent.required_action':
+        setupIntent = event.data.object;
+        setupIntents.handleRequiresAction(stripe, setupIntent);
+        break;
+      case 'setup_intent.setup_failed':
+        setupIntent = event.data.object;
+        setupIntents.handleSetupFailed(stripe, setupIntent);
+        break;
+      case 'setup_intent.succeeded':
+        setupIntent = event.data.object;
+        setupIntents.handleSucceeded(stripe, setupIntent);
         break;
       default:
         // Unexpected event type
