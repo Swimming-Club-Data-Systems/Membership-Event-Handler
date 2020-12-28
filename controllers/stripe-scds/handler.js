@@ -10,6 +10,7 @@ const mysql = require('../../common/mysql');
 const checkoutSessions = require('./checkout-sessions');
 const mandates = require('./mandate');
 const setupIntents = require('./setup-intent');
+const paymentMethods = require('./payment-method');
 // const disputes = require('./dispute');
 
 const process = require('process');
@@ -67,6 +68,18 @@ exports.webhookHandler = async function (req, res, next) {
       case 'setup_intent.succeeded':
         setupIntent = event.data.object;
         setupIntents.handleSucceeded(stripe, setupIntent);
+        break;
+      case 'payment_method.automatically_updated':
+        paymentMethod = event.data.object;
+        paymentMethods.handleUpdate(stripe, paymentMethod);
+        break;
+      case 'payment_method.updated':
+        paymentMethod = event.data.object;
+        paymentMethods.handleUpdate(stripe, paymentMethod);
+        break;
+      case 'payment_method.detached':
+        paymentMethod = event.data.object;
+        paymentMethods.handleDetach(stripe, paymentMethod);
         break;
       default:
         // Unexpected event type

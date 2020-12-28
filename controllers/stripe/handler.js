@@ -40,7 +40,7 @@ exports.webhookHandler = async function (req, res, next) {
     if (event.livemode === (process.env.NODE_ENV === 'production')) {
       // Handle the event
       switch (event.type) {
-        case 'payment_method.card_automatically_updated':
+        case 'payment_method.automatically_updated':
           paymentMethod = event.data.object;
           paymentMethods.handleUpdate(org, stripe, paymentMethod);
           break;
