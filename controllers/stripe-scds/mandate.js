@@ -20,7 +20,7 @@ exports.handleUpdated = async function (stripe, mandate) {
     var [results, fields] = await mysql.query("UPDATE `tenantPaymentMethods` SET `BillingDetails` = ?, `Type` = ? `TypeData` = ? WHERE `MethodID` = ?", [
       JSON.stringify(mandate.payment_method.billing_details),
       mandate.payment_method.type,
-      mandate.payment_method[intent.payment_method.type],
+      JSON.stringify(mandate.payment_method[intent.payment_method.type]),
       mandate.payment_method.id,
     ]);
 
