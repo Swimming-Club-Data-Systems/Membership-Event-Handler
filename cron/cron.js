@@ -79,7 +79,7 @@ let chargeUsers = cron.schedule('* * * * *', async () => {
 /**
  * Do legacy renwal system populating
  */
-let legacyRenewalGenerator = cron.schedule('0 5 * * *', async () => {
+let legacyRenewalGenerator = cron.schedule('1 0-3 * * *', async () => {
   // console.log('Do legacy renwal system populating every day at 0500');
   const sites = await getSites();
 
