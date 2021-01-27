@@ -10,7 +10,7 @@
   "dependencies": {
     "@sendgrid/inbound-mail-parser": "^7.2.6",
     "@sendgrid/mail": "^7.1.1",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "bignumber.js": "^9.0.0",
     "cookie-parser": "^1.4.4",
     "debug": "^2.6.9",
