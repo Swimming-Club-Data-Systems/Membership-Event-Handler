@@ -14,18 +14,22 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
   try {
     var results, fields;
     const swimsArray = {
+      '25Free': '25 Free',
       '50Free': '50 Free',
       '100Free': '100 Free',
       '200Free': '200 Free',
       '400Free': '400 Free',
       '800Free': '800 Free',
       '1500Free': '1500 Free',
+      '25Back': '25 Back',
       '50Back': '50 Back',
       '100Back': '100 Back',
       '200Back': '200 Back',
+      '25Breast': '25 Breast',
       '50Breast': '50 Breast',
       '100Breast': '100 Breast',
       '200Breast': '200 Breast',
+      '25Fly': '25 Fly',
       '50Fly': '50 Fly',
       '100Fly': '100 Fly',
       '200Fly': '200 Fly',
