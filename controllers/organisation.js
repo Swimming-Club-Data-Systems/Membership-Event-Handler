@@ -16,13 +16,16 @@ module.exports = class Organisation {
   verified;
   goCardless;
 
-  constructor(id, name, code, website, email, verified) {
+  constructor(id, name, code, website, email, verified, domain) {
     this.id = id;
     this.name = name;
     this.code = code;
     this.website = website;
     this.email = email;
     this.verified = verified;
+    if (domain) {
+      this.domain = domain;
+    }
 
     this.goCardless = {
       token: null,
@@ -35,13 +38,13 @@ module.exports = class Organisation {
 
   static async fromId(id) {
     // Get tenant
-    var [results, fields] = await mysql.query("SELECT `ID`, `Name`, `Code`, `Website`, `Email`, `Verified` FROM tenants WHERE ID = ?", [
+    var [results, fields] = await mysql.query("SELECT `ID`, `Name`, `Code`, `Website`, `Email`, `Verified`, `Domain` FROM tenants WHERE ID = ?", [
       id
     ]);
 
     if (results.length > 0) {
       let r = results[0];
-      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified, r.Domain);
       await org.getKeys();
       return org;
     } else {
@@ -51,13 +54,13 @@ module.exports = class Organisation {
 
   static async fromStripeAccount(id) {
     // Get tenant
-    var [results, fields] = await mysql.query("SELECT tenants.ID, tenants.Name, tenants.Code, tenants.Website, tenants.Email, tenants.Verified FROM `tenantOptions` INNER JOIN tenants ON tenantOptions.Tenant = tenants.id WHERE Option = 'STRIPE_ACCOUNT_ID' AND Value = ?", [
+    var [results, fields] = await mysql.query("SELECT tenants.ID, tenants.Name, tenants.Code, tenants.Website, tenants.Email, tenants.Verified, tenants.Domain FROM `tenantOptions` INNER JOIN tenants ON tenantOptions.Tenant = tenants.id WHERE Option = 'STRIPE_ACCOUNT_ID' AND Value = ?", [
       id
     ]);
 
     if (results.length > 0) {
       let r = results[0];
-      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified, r.Domain);
       await org.getKeys();
       return org;
     } else {
@@ -67,13 +70,13 @@ module.exports = class Organisation {
 
   static async fromGoCardlessAccount(id) {
     // Get tenant
-    var [results, fields] = await mysql.query("SELECT tenants.ID, tenants.Name, tenants.Code, tenants.Website, tenants.Email, tenants.Verified FROM `gcCredentials` INNER JOIN tenants ON gcCredentials.Tenant = tenants.id WHERE OrganisationID = ?", [
+    var [results, fields] = await mysql.query("SELECT tenants.ID, tenants.Name, tenants.Code, tenants.Website, tenants.Email, tenants.Verified, tenants.Domain FROM `gcCredentials` INNER JOIN tenants ON gcCredentials.Tenant = tenants.id WHERE OrganisationID = ?", [
       id
     ]);
 
     if (results.length > 0) {
       let r = results[0];
-      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified);
+      let org = new Organisation(r.ID, r.Name, r.Code, r.Website, r.Email, r.Verified, r.Domain);
       await org.getKeys();
       return org;
     } else {
@@ -206,6 +209,10 @@ module.exports = class Organisation {
 
   isCLS() {
     return this.code == 'CLSE';
+  }
+
+  getUrl(path) {
+    return 'https://' + this.domain + '/' + path;
   }
 
   getSendingEmail() {
