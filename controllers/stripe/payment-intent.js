@@ -2,6 +2,7 @@
  * Stripe payment intent webhook code
  */
 
+const axios = require('axios').default;
 const mysql = require('../../common/mysql');
 const galas = require('./payment-intent-handlers/gala');
 const renewals = require('./payment-intent-handlers/renewal');
@@ -82,6 +83,24 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
     galas.paymentIntentHandler(org, stripe, intent);
   } else if (intent.metadata.payment_category && intent.metadata.payment_category === 'renewal') {
     renewals.paymentIntentHandler(org, stripe, intent);
+  } else if (intent.metadata.payment_category && intent.metadata.payment_category === 'checkout_v1') {
+    // Hand off to PHP app
+    console.log(org.getUrl('webhooks/checkout_v1'));
+
+    axios.post(
+      org.getUrl('webhooks/checkout_v1'),
+      {
+        org: org.getId(),
+        payment: payment.id,
+      }
+    ).then(function (response) {
+      // handle success
+      console.log('sent - success')
+    })
+      .catch(function (error) {
+        // handle error
+        console.warn(error);
+      })
   }
 }
 
