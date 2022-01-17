@@ -3,9 +3,14 @@
  */
 
 const htmlToText = require('html-to-text');
-const sgMail = require('@sendgrid/mail');
 const time = require('moment-timezone');
 const escape = require('escape-html');
+const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { createMimeMessage, Mailbox } = require('mimetext');
+const ses = new SESv2Client({ region: "eu-west-2" });
+const s3 = new S3Client({ region: "eu-west-2" });
+const { Buffer } = require('buffer');
 
 class Email {
 
@@ -23,9 +28,11 @@ class Email {
     if (org != null) {
       this.senderName = org.getName();
       this.senderEmail = org.getSendingEmail();
+      this.replyEmail = org.getEmail();
     } else {
       this.senderName = 'SCDS';
       this.senderEmail = 'noreply@myswimmingclub.uk';
+      this.replyEmail = 'support@myswimmingclub.uk';
     }
     this.subject = subject;
     this.htmlContent = content;
@@ -106,7 +113,7 @@ class Email {
     let address = [];
     if (this.org.getKey('CLUB_ADDRESS')) {
       try {
-        let address = JSON.parse(this.org.getKey('CLUB_ADDRESS'))
+        address = JSON.parse(this.org.getKey('CLUB_ADDRESS'))
       } catch (err) { }
     }
 
@@ -144,7 +151,7 @@ class Email {
     let address = [];
     if (this.org.getKey('CLUB_ADDRESS')) {
       try {
-        let address = JSON.parse(this.org.getKey('CLUB_ADDRESS'))
+        address = JSON.parse(this.org.getKey('CLUB_ADDRESS'))
       } catch (err) { }
     }
 
@@ -166,34 +173,28 @@ class Email {
     return this.textContent + footer;
   }
 
-  send() {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  async send() {
+    const msg = createMimeMessage();
 
-    const msg = {
-      to: {
-        name: this.recipientName,
-        email: this.recipientEmail
-      },
-      from: {
-        name: this.senderName,
-        email: this.senderEmail
-      },
-      subject: this.subject,
-      text: this.getText(),
-      html: this.getHtml(),
-    };
+    msg.setSender({ name: this.senderName, addr: this.senderEmail });
+    msg.setSubject(this.subject);
+    msg.setMessage('text/html', this.getHtml());
+    msg.setMessage('text/plain', this.getText());
+    msg.setTo({ name: this.recipientName, addr: this.recipientEmail });
+    msg.setReplyTo({ name: this.senderName, addr: this.replyEmail });
 
-    (async () => {
-      try {
-        await sgMail.send(msg);
-      } catch (error) {
-        console.error(error);
+    let raw = Buffer.from(msg.asRaw(), Uint8Array);
 
-        if (error.response) {
-          console.error(error.response.body)
+    const params = {
+      Content: {
+        Raw: {
+          Data: raw
         }
       }
-    })();
+    }
+
+    const command = new SendEmailCommand(params);
+    await ses.send(command);
   }
 }
 

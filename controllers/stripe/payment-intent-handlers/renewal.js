@@ -338,7 +338,7 @@ exports.paymentIntentHandler = async function (org, stripe, intent) {
           }
 
           let mail = new Email(name, email, org, 'Payment Receipt', message);
-          mail.send();
+          await mail.send();
 
         } catch (err) {
           console.error(err);

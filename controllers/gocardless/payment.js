@@ -119,7 +119,7 @@ async function customerApprovalDenied(org, client, event) {
   content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
   let mail = new Email(name, userRow[0].EmailAddress, org, subject, content);
-  mail.send();
+  await mail.send();
 }
 
 async function submitted(org, client, event) {
@@ -216,7 +216,7 @@ async function failed(org, client, event) {
       content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
       let mail = new Email(name, user.EmailAddress, org, subject, content);
-      mail.send();
+      await mail.send();
     }
 
   }
@@ -241,7 +241,7 @@ async function chargedBack(org, client, event) {
   content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
   let mail = new Email(name, userRow[0].EmailAddress, org, subject, content);
-  mail.send();
+  await mail.send();
 }
 
 async function cancelled(org, client, event) {

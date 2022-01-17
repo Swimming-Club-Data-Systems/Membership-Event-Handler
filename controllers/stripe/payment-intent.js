@@ -223,7 +223,7 @@ exports.handleFailedPaymentIntent = async function (org, stripe, payment) {
       message += '<p>Thank you,<br>The ' + escape(org.getName()) + ' team</p>'
 
       let mail = new Email(name, email, org, 'Your Direct Debit has failed', message);
-      mail.send();
+      await mail.send();
 
     }
   } else {

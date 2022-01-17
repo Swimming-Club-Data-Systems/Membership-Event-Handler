@@ -112,7 +112,7 @@ async function cancelled(org, client, event) {
         content += '<p>Kind regards,<br>The ' + escape(org.getName()) + ' team</p>';
 
         let mail = new Email(name, rows[0].EmailAddress, org, subject, content);
-        mail.send();
+        await mail.send();
       }
     }
   } catch (err) {
