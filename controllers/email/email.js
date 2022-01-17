@@ -98,7 +98,12 @@ class Email {
       head += `<img src="${escape(process.env.PUBLIC_URL + "public/img/notify/NotifyLogo.png")}"
         style="width:300px;max-width:100%;" srcset="${escape(process.env.PUBLIC_URL + "public/img/notify/NotifyLogo@2x.png")} 2x, ${escape(process.env.PUBLIC_URL + "public/img/notify/NotifyLogo@3x.png")} 3x" alt="${escape(this.org.getName())} Logo">`;
     } else if (this.org && this.org.getKey('LOGO_DIR')) {
-      let dir = process.env.PUBLIC_URL + this.org.getCodeId() + '/' + this.org.getKey('LOGO_DIR');
+      let dir = '';
+      if (String(this.org.getKey('LOGO_DIR')).includes('X-S3:')) {
+        dir = process.env.AWS_CLOUDFRONT_ROOT + this.org.getKey('LOGO_DIR').slice(6);
+      } else {
+        dir = process.env.PUBLIC_URL + this.org.getCodeId() + '/' + this.org.getKey('LOGO_DIR');
+      }
       head += `<img src="${escape(dir + "logo-150.png")}"
       style="max-width:100%;max-height:150px;" srcset="${escape(dir + "logo-150@2x.png")} 2x, ${escape(dir + "logo-150@3x.png")} 3x" alt="${escape(this.org.getName())} Logo">`;
       // } else if (isset(app()->tenant) && $logos = app()->tenant->getKey('LOGO_DIR')) {
