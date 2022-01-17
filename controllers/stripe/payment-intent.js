@@ -259,7 +259,7 @@ exports.handleNewPaymentIntent = async function (org, stripe, payment) {
       // Get the customer
       // Payments with no customer will be ignored
       [results, fields] = await mysql.query("SELECT `User` FROM stripeCustomers WHERE CustomerID = ?", [
-        payment.customer
+        payment.customer.id
       ]);
 
       if (results.length > 0) {
