@@ -94,18 +94,15 @@ class Email {
     <div style="background:#e3eef6;">
       <table style="width:100%;border:0px;text-align:left;padding:10px 0px 10px 0px;background:#e3eef6;"><tr><td align="center">
         <table style="width:100%;max-width:700px;border:0px;text-align:center;background:#ffffff;padding:10px 10px 0px 10px;"><tr><td>`;
-    if (this.org.isCLS()) {
-      head += `<img src="${escape(process.env.PUBLIC_URL + "public/img/notify/NotifyLogo.png")}"
-        style="width:300px;max-width:100%;" srcset="${escape(process.env.PUBLIC_URL + "public/img/notify/NotifyLogo@2x.png")} 2x, ${escape(process.env.PUBLIC_URL + "public/img/notify/NotifyLogo@3x.png")} 3x" alt="${escape(this.org.getName())} Logo">`;
-    } else if (this.org && this.org.getKey('LOGO_DIR')) {
+    if (this.org && this.org.getKey('LOGO_DIR')) {
       let dir = '';
       if (String(this.org.getKey('LOGO_DIR')).includes('X-S3:')) {
         dir = process.env.AWS_CLOUDFRONT_ROOT + this.org.getKey('LOGO_DIR').slice(6);
       } else {
         dir = process.env.PUBLIC_URL + this.org.getCodeId() + '/' + this.org.getKey('LOGO_DIR');
       }
-      head += `<img src="${escape(dir + "logo-150.png")}"
-      style="max-width:100%;max-height:150px;" srcset="${escape(dir + "logo-150@2x.png")} 2x, ${escape(dir + "logo-150@3x.png")} 3x" alt="${escape(this.org.getName())} Logo">`;
+      head += `<img src="${escape(dir + "logo-75.png")}"
+      style="max-width:100%;max-height:75px;" srcset="${escape(dir + "logo-75@2x.png")} 2x, ${escape(dir + "logo-75@3x.png")} 3x" alt="${escape(this.org.getName())} Logo">`;
       // } else if (isset(app()->tenant) && $logos = app()->tenant->getKey('LOGO_DIR')) {
       //   $head .= "<img src=\"" . autoUrl($logos . 'logo-150.png') . "\" srcset=\"" .
       //   autoUrl($logos . 'logo-150@2x.png') . " 2x, " .
