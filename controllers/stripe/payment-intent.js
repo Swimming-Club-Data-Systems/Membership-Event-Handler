@@ -24,17 +24,13 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
   );
 
   // Decide if Direct Debit
-  if (intent.metadata.payment_category && intent.metadata.payment_category === 'monthly_fee') {
+  if (intent?.metadata?.payment_category === 'monthly_fee') {
 
     // Set fees if possible
     let fee = 0;
     if (intent.charges.data[0].balance_transaction) {
       // Handle stripe balance transaction for fees
       let fee = intent.charges.data[0].balance_transaction.fee;
-      // [results, fields] = await mysql.query("UPDATE `stripePayments` SET `Fees` = ? WHERE `Intent` = ?;", [
-      //   fee,
-      //   intent.id,
-      // ]);
     }
 
     // Handle direct debit payment
@@ -44,51 +40,39 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
       intent.id,
     ]);
 
-    // console.log(payment);
-    // console.log([
-    //   intent.status,
-    //   intent.id,
-    // ]);
-
     // Update legacy `paymentsPending` table - For old hangovers
     [results, fields] = await mysql.query("UPDATE `paymentsPending` INNER JOIN payments ON payments.PaymentID = paymentsPending.Payment SET paymentsPending.Status = ? WHERE `stripePaymentIntent` = ?", [
       'Paid',
       intent.id,
     ]);
-  } else if (intent.metadata.payment_category && intent.metadata.payment_category === 'gala_entry') {
-
-    // // Check if there are gala entries for this payment intent
-    // [results, fields] = await mysql.query("SELECT ID FROM stripePayments WHERE Intent = ?", [
-    //   intent.id
-    // ]);
-
-    // if (results.length == 0) {
-    //   return;
-    // }
-
-    // var databaseId = results[0].ID;
-
-    // // Get gala count
-    // // Check if there are gala entries for this payment intent
-    // [results, fields] = await mysql.query("SELECT COUNT(*) FROM galaEntries WHERE StripePayment = ?", [
-    //   databaseId
-    // ]);
-
-    // let galaCount = results[0]['COUNT(*)'];
-
-    // if (galaCount > 0) {
-    //   // This payment was for galas so run the code for a successful gala payment
-    //   galas.paymentIntentHandler(org, stripe, intent);
-    // }
+  } else if (intent?.metadata?.payment_category === 'gala_entry') {
     galas.paymentIntentHandler(org, stripe, intent);
-  } else if (intent.metadata.payment_category && intent.metadata.payment_category === 'renewal') {
+  } else if (intent?.metadata?.payment_category === 'renewal') {
     renewals.paymentIntentHandler(org, stripe, intent);
-  } else if (intent.metadata.payment_category && intent.metadata.payment_category === 'checkout_v1') {
+  } else if (intent?.metadata?.payment_category === 'checkout_v1') {
     // Hand off to PHP app
     console.log(org.getUrl('webhooks/checkout_v1'));
 
     axios.post(
       org.getUrl('webhooks/checkout_v1'),
+      {
+        org: org.getId(),
+        payment: payment.id,
+      }
+    ).then(function (response) {
+      // handle success
+      console.log('sent - success')
+    })
+      .catch(function (error) {
+        // handle error
+        console.warn(error);
+      })
+  } else if (intent?.metadata?.payment_category === 'checkout_v2') {
+    // Hand off to PHP app
+    console.log(org.getUrl('webhooks/checkout_v2'));
+
+    axios.post(
+      org.getUrl('webhooks/checkout_v2'),
       {
         org: org.getId(),
         payment: payment.id,
