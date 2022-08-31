@@ -23,7 +23,7 @@
     "html-to-text": "^5.1.1",
     "http-errors": "^1.7.3",
     "mimetext": "github:Swimming-Club-Data-Systems/MIMEText#master",
-    "moment-timezone": "^0.5.31",
+    "moment-timezone": "^0.5.35",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
     "mysql": "^2.18.1",
