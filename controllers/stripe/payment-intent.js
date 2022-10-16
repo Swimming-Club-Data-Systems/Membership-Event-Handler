@@ -54,7 +54,7 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
     console.log(org.getUrl('webhooks/checkout_v1'));
 
     axios.post(
-      org.getUrl('webhooks/checkout_v1'),
+      org.getUrl('v1/webhooks/checkout_v1'),
       {
         org: org.getId(),
         payment: payment.id,
@@ -72,7 +72,7 @@ exports.handleCompletedPaymentIntent = async function (org, stripe, payment) {
     console.log(org.getUrl('webhooks/checkout_v2'));
 
     axios.post(
-      org.getUrl('webhooks/checkout_v2'),
+      org.getUrl('v1/webhooks/checkout_v2'),
       {
         org: org.getId(),
         payment: payment.id,
@@ -250,7 +250,7 @@ exports.handleNewPaymentIntent = async function (org, stripe, payment) {
         var user = results[0]['User'];
 
         var refunded = 0;
-        if (payment.charges.data && payment.charges.data[0].refunds.data) {
+        if (payment?.charges?.data && payment?.charges?.data[0]?.refunds?.data) {
           let refunds = payment.charges.data[0].refunds.data;
           refunds.forEach(refund => {
             refunded += parseInt(refund.amount);
