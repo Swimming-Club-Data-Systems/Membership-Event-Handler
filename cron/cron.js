@@ -142,16 +142,6 @@ let retryDirectDebit = cron.schedule('*/30 * * * *', async () => {
 );
 
 /**
- * Handle squad moves
- */
-let handleSquadMoves = cron.schedule('1 * * * *', async () => {
-  // console.log('Handle squad moves');
-  squadMoves.moveMembers();
-},
-  { timezone: timezone }
-);
-
-/**
  * Remove covid details
  */
 let handleContactTracingDeletion = cron.schedule('1 * * * *', async () => {
